@@ -9,6 +9,7 @@ import {
   verifyRegistrationOTP,
   verifyLoginOtp,
 } from "../controllers/userController.js";
+import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
@@ -18,7 +19,7 @@ router.post("/verify-registration-otp", verifyRegistrationOTP); //Registartion O
 router.post("/verify-login-otp", verifyLoginOtp); //Login OTP verification route
 
 router.get("/", getAllUsers);
-router.get("/:id", getUserByID);
+router.get("/:id", protect, getUserByID);
 
 router.put("/:id", updateUser);
 

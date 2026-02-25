@@ -171,18 +171,28 @@ export const verifyLoginOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "OTP expired" });
     }
 
-    // Clear OTP after successful verification
+    // Clear OTP
     user.loginOtp = null;
     user.loginOtpExpires = null;
     await user.save();
 
-    res.status(200).json({ success: true, message: "Login successful" });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "OTP verification failed",
-      error: error.message,
+    // 🔥 Generate JWT
+    const token = generateToken(user._id);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      token,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+      },
     });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "OTP verification failed" });
   }
 };
 
