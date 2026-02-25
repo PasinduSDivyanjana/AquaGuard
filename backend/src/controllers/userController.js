@@ -1,6 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
-import { sendOTPEmail } from "../config/email.js";
+import { sendRegistrationOTPEmail } from "../config/email.js";
+import { sendLoginOTPEmail } from "../config/email.js";
 
 // ✅ Create User
 export const createUser = async (req, res) => {
@@ -37,7 +38,7 @@ export const createUser = async (req, res) => {
     await newUser.save();
 
     // Send OTP
-    await sendOTPEmail(email, otp);
+    await sendRegistrationOTPEmail(email, otp);
 
     res.status(200).json({
       success: true,
@@ -137,7 +138,7 @@ export const loginUser = async (req, res) => {
     await user.save();
 
     // Send OTP email
-    await sendOTPEmail(email, otp);
+    await sendLoginOTPEmail(email, otp);
 
     res.status(200).json({
       success: true,
