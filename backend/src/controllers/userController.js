@@ -2,6 +2,7 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import { sendRegistrationOTPEmail } from "../config/email.js";
 import { sendLoginOTPEmail } from "../config/email.js";
+import { generateToken } from "../utils/generateToken.js";
 
 // ✅ Create User
 export const createUser = async (req, res) => {
@@ -163,7 +164,14 @@ export const verifyLoginOtp = async (req, res) => {
         .json({ success: false, message: "User not found" });
     }
 
-    if (user.loginOtp !== otp) {
+    if (!user.loginOtp || !user.loginOtpExpires) {
+      return res.status(400).json({
+        success: false,
+        message: "No OTP found. Please login again.",
+      });
+    }
+
+    if (user.loginOtp !== otp.toString()) {
       return res.status(400).json({ success: false, message: "Invalid OTP" });
     }
 
@@ -171,28 +179,23 @@ export const verifyLoginOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "OTP expired" });
     }
 
-    // Clear OTP
     user.loginOtp = null;
     user.loginOtpExpires = null;
     await user.save();
 
-    // 🔥 Generate JWT
     const token = generateToken(user._id);
 
     res.status(200).json({
       success: true,
       message: "Login successful",
       token,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-      },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ success: false, message: "OTP verification failed" });
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 
@@ -300,6 +303,32 @@ export const deleteUser = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to delete user",
+      error: error.message,
+    });
+  }
+};
+
+//Getprofile controller
+export const getProfile = async (req, res) => {
+  try {
+    // req.user is set by 'protect' middleware after JWT verification
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Profile fetched successfully",
+      data: req.user,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch profile",
       error: error.message,
     });
   }

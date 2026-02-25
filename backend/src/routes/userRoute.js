@@ -8,6 +8,7 @@ import {
   loginUser,
   verifyRegistrationOTP,
   verifyLoginOtp,
+  getProfile,
 } from "../controllers/userController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
@@ -19,6 +20,7 @@ router.post("/verify-registration-otp", verifyRegistrationOTP); //Registartion O
 router.post("/verify-login-otp", verifyLoginOtp); //Login OTP verification route
 
 router.get("/", getAllUsers);
+router.get("/profile", protect, getProfile);
 router.get("/:id", protect, getUserByID);
 
 router.put("/:id", updateUser);
