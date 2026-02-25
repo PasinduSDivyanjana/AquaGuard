@@ -1,35 +1,103 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
+import { sendOTPEmail } from "../config/email.js";
 
 // ✅ Create User
 export const createUser = async (req, res) => {
   try {
-    const { password, ...rest } = req.body;
+    const { email, password, ...rest } = req.body;
 
-    // 1️⃣ Hash password
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "Email already registered",
+      });
+    }
+
+    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // 2️⃣ Create user with hashed password
+    // Generate OTP
+    const otp = generateOTP();
+
+    // Create user but NOT verified
     const newUser = new User({
       ...rest,
+      email,
       password: hashedPassword,
+      otp,
+      otpExpires: Date.now() + 5 * 60 * 1000, // 5 minutes
+      isVerified: false,
     });
 
-    const savedUser = await newUser.save();
+    await newUser.save();
 
-    // 3️⃣ Remove password from response
-    const { password: _, ...userWithoutPassword } = savedUser._doc;
+    // Send OTP
+    await sendOTPEmail(email, otp);
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
-      message: "User created successfully",
-      data: userWithoutPassword,
+      message: "OTP sent to email. Please verify to complete registration.",
     });
   } catch (error) {
-    res.status(400).json({
+    res.status(500).json({
       success: false,
-      message: "Failed to create user",
+      message: "Registration failed",
+      error: error.message,
+    });
+  }
+};
+
+//OTP Generator
+const generateOTP = () => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
+export const verifyOTP = async (req, res) => {
+  try {
+    const { email, otp } = req.body;
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    if (user.otp !== otp) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    if (user.otpExpires < Date.now()) {
+      return res.status(400).json({
+        success: false,
+        message: "OTP expired",
+      });
+    }
+
+    user.isVerified = true;
+    user.otp = null;
+    user.otpExpires = null;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Account verified successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Verification failed",
       error: error.message,
     });
   }
@@ -40,7 +108,6 @@ export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // 1️⃣ Find user
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -50,7 +117,13 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // 2️⃣ Compare password with hashed password
+    if (!user.isVerified) {
+      return res.status(401).json({
+        success: false,
+        message: "Please verify your email before logging in",
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -60,13 +133,17 @@ export const loginUser = async (req, res) => {
       });
     }
 
-    // 3️⃣ Remove password before sending
-    const { password: _, ...userWithoutPassword } = user._doc;
+    const {
+      password: _password,
+      otp,
+      otpExpires,
+      ...userWithoutSensitive
+    } = user._doc;
 
     res.status(200).json({
       success: true,
       message: "Login successful",
-      data: userWithoutPassword,
+      data: userWithoutSensitive,
     });
   } catch (error) {
     res.status(500).json({

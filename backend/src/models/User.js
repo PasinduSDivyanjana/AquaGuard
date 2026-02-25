@@ -55,16 +55,28 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       required: true,
     },
-    // 🔹 Updated roles
+
+    // 🔹 Role
     role: {
       type: String,
       enum: ["User", "Admin", "Villager"],
       default: "User",
     },
+
+    // 🔐 OTP Fields (NEW)
+    otp: {
+      type: String,
+    },
+    otpExpires: {
+      type: Date,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
-
 
 const User = mongoose.model("User", userSchema);
 export default User;

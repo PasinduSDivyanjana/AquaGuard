@@ -6,12 +6,14 @@ import {
   updateUser,
   deleteUser,
   loginUser,
+  verifyOTP,
 } from "../controllers/userController.js";
 
 const router = express.Router();
 
-router.post("/", createUser);
+router.post("/register", createUser);
 router.post("/login", loginUser);
+router.post("/verify-otp", verifyOTP);
 
 router.get("/", getAllUsers);
 
