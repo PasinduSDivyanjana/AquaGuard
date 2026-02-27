@@ -5,26 +5,32 @@ import {
   getUserByID,
   updateUser,
   deleteUser,
-  loginUser,
   verifyRegistrationOTP,
-  verifyLoginOtp,
   getProfile,
 } from "../controllers/userController.js";
+import {
+  loginUser,
+  verifyLoginOtp,
+  forgotPassword,
+  resetPassword,
+} from "../controllers/authController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.post("/register", createUser);
-router.post("/login", loginUser);
+router.post("/register", createUser); //Registration route
+router.post("/login", loginUser); //Login route
 router.post("/verify-registration-otp", verifyRegistrationOTP); //Registartion OTP verification route
 router.post("/verify-login-otp", verifyLoginOtp); //Login OTP verification route
+router.post("/forgot-password", forgotPassword); // Forgot password — send OTP & link
+router.post("/reset-password", resetPassword); // Reset password — using OTP or token
 
-router.get("/", getAllUsers);
-router.get("/profile", protect, getProfile);
-router.get("/:id", protect, getUserByID);
+router.get("/", getAllUsers); // Get all users (Admin only)
+router.get("/profile", protect, getProfile); // Get logged-in user's profile
+router.get("/:id", protect, getUserByID); // Get user by ID (Admin or self)
 
-router.put("/:id", updateUser);
+router.put("/:id", updateUser); // Update user by ID (Admin or self)
 
-router.delete("/:id", deleteUser);
+router.delete("/:id", deleteUser); // Delete user by ID (Admin or self)
 
 export default router;

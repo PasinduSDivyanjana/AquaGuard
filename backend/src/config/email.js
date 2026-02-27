@@ -549,3 +549,156 @@ export const sendLoginOTPEmail = async (email, otp) => {
     throw new Error("Failed to send login OTP email");
   }
 };
+
+export const sendResetEmail = async (email, resetLink, otp) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const htmlTemplate = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Password Reset Request</title>
+        <style>
+            body {
+                margin: 0;
+                padding: 0;
+                background-color: #f4f6f9;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            }
+            .wrapper {
+                max-width: 600px;
+                margin: 20px auto;
+                background-color: #ffffff;
+                border-radius: 16px;
+                overflow: hidden;
+                box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                padding: 30px 20px;
+                text-align: center;
+                color: white;
+            }
+            .header h1 {
+                margin: 0;
+                font-size: 28px;
+            }
+            .content {
+                padding: 40px 30px;
+            }
+            .greeting {
+                font-size: 18px;
+                margin-bottom: 15px;
+                color: #333;
+            }
+            .otp-container {
+                background: #f0f3fd;
+                border: 2px dashed #667eea;
+                border-radius: 16px;
+                padding: 25px;
+                margin: 25px 0;
+                text-align: center;
+            }
+            .otp-label {
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                color: #555;
+                margin-bottom: 10px;
+            }
+            .otp-code {
+                font-size: 36px;
+                font-weight: 700;
+                letter-spacing: 8px;
+                color: #333;
+                font-family: 'Courier New', monospace;
+                background: white;
+                padding: 12px 20px;
+                border-radius: 12px;
+                display: inline-block;
+                margin-bottom: 10px;
+                border: 1px solid #e0e7ff;
+            }
+            .reset-link {
+                display: inline-block;
+                margin-top: 15px;
+                padding: 12px 25px;
+                background-color: #667eea;
+                color: white;
+                text-decoration: none;
+                border-radius: 25px;
+                font-weight: 500;
+            }
+            .expiry-badge {
+                background-color: #fff3cd;
+                border: 1px solid #ffeeba;
+                color: #856404;
+                padding: 10px 15px;
+                border-radius: 50px;
+                font-size: 14px;
+                display: inline-block;
+                margin-top: 15px;
+            }
+            .footer {
+                background-color: #f8f9fa;
+                padding: 25px 30px;
+                text-align: center;
+                border-top: 1px solid #e9ecef;
+                font-size: 12px;
+                color: #777;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="wrapper">
+            <div class="header">
+                <h1>Password Reset Request</h1>
+            </div>
+            <div class="content">
+                <div class="greeting">Hello,</div>
+                <p>You requested a password reset. You have two options to reset your password:</p>
+  
+                <div class="otp-container">
+                    <div class="otp-label">Your OTP Code</div>
+                    <div class="otp-code">${otp}</div>
+                    <div class="expiry-badge">⏰ Expires in 10 minutes</div>
+                </div>
+  
+                <p>Or click the link below to reset your password directly:</p>
+                <a href="${resetLink}" class="reset-link">Reset Password</a>
+  
+                <p style="margin-top: 20px; color: #555; font-size: 14px;">
+                    If you didn't request this, please ignore this email or secure your account.
+                </p>
+            </div>
+            <div class="footer">
+                © ${new Date().getFullYear()} Aqua Guard. This is an automated message.
+            </div>
+        </div>
+    </body>
+    </html>
+    `;
+
+  try {
+    const info = await transporter.sendMail({
+      from: `"Aqua Guard" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Password Reset Request - OTP & Link",
+      html: htmlTemplate,
+    });
+
+    console.log("Password reset email sent:", info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
+    throw new Error("Failed to send password reset email");
+  }
+};
