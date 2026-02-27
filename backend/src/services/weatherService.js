@@ -8,7 +8,7 @@ export const fetchWeather = async (lat, lon, wellId) => {
     return cache;
   }
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.WEATHER_API}`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`;
 
   const { data } = await axios.get(url);
 

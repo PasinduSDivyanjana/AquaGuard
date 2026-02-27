@@ -11,10 +11,10 @@ import {
 const router = express.Router();
 
 
-router.get("/", getAllAlerts);
+router.get("/",getAllAlerts);
 router.get("/:id", getAlertDetails);
 router.put("/:id/read", markRead);
-router.post("/", createAlertAndMaybeAutoTask);
+router.post("/well/:wellId", createAlertAndMaybeAutoTask);
 router.post("/:id/accept", acceptAlertAndCreateTask);
 router.post("/:id/reject", rejectAlertAndAutoTask);
 

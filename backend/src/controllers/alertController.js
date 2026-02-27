@@ -1,7 +1,7 @@
 import Alert from "../models/Alert.js";
 import AutoTask from "../models/AutoTask.js";
 import Task from "../models/Task.js";
-import { createAlert, shouldTriggerAutoTask } from "../services/alertService.js";
+import { checkWeatherAndCreateAlert , shouldTriggerAutoTask } from "../services/alertService.js";
 
 export const getAllAlerts = async (req, res) => {
   const alerts = await Alert.find().sort({ createdAt: -1 });
@@ -19,12 +19,49 @@ export const markRead = async (req, res) => {
 };
 
 // Create alert and trigger auto task if needed (only one auto task per alert)
+// export const createAlertAndMaybeAutoTask = async (req, res) => {
+//   const { wellId } = req.params;
+//   const alert = await checkWeatherAndCreateAlert(wellId);
+//   let autoTask = null;
+//   if (shouldTriggerAutoTask(alert)) {
+//     // Prevent duplicate auto tasks for the same alert
+//     autoTask = await AutoTask.findOne({ well: alert.well, reason: alert.message, status: { $ne: "rejected" } });
+//     if (!autoTask) {
+//       autoTask = await AutoTask.create({
+//         well: alert.well,
+//         riskScore: 80,
+//         reason: alert.message,
+//         predictedDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+//         status: "pending",
+//       });
+//     }
+//   }
+//   res.json({ alert, autoTask });
+// };
+
 export const createAlertAndMaybeAutoTask = async (req, res) => {
-  const alert = await createAlert(req.body);
+  const { wellId } = req.params;
+  const alert = await checkWeatherAndCreateAlert(wellId);
+
+  // ⛔ Prevent crash if no alert was created
+  if (!alert) {
+    return res.json({ 
+      alert: null, 
+      autoTask: null, 
+      message: "No alert created. Weather conditions normal." 
+    });
+  }
+
   let autoTask = null;
+
   if (shouldTriggerAutoTask(alert)) {
     // Prevent duplicate auto tasks for the same alert
-    autoTask = await AutoTask.findOne({ well: alert.well, reason: alert.message, status: { $ne: "rejected" } });
+    autoTask = await AutoTask.findOne({
+      well: alert.well,
+      reason: alert.message,
+      status: { $ne: "rejected" }
+    });
+
     if (!autoTask) {
       autoTask = await AutoTask.create({
         well: alert.well,
@@ -35,7 +72,8 @@ export const createAlertAndMaybeAutoTask = async (req, res) => {
       });
     }
   }
-  res.json({ alert, autoTask });
+
+  return res.json({ alert, autoTask });
 };
 
 // When user accepts alert, create a Task (not AutoTask), link to alert, and approve AutoTask
