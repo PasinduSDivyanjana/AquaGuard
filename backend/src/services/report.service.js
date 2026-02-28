@@ -14,7 +14,7 @@ export const createReportService = async (data) => {
 
 export const getAllReportsService = async () => {
   return await Report.find()
-    .populate("reportedBy", "name email")
+    .populate("reportedBy", "firstName lastName email")
     .populate("wellId", "name village");
 };
 

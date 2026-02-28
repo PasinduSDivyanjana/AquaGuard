@@ -1,45 +1,57 @@
 import Report from "../models/Report.js";
 
-// CREATE REPORT
+/**
+ * CREATE REPORT
+ */
 export const createReport = async (req, res) => {
   try {
-    const report = new Report(req.body);
-    const savedReport = await report.save();
+    const report = await Report.create(req.body);
 
-    // Populate reportedBy and wellId after save
-    const populatedReport = await savedReport
+    const populatedReport = await Report.findById(report._id)
       .populate("reportedBy", "firstName lastName email")
       .populate("wellId", "name village");
 
     res.status(201).json({
+      success: true,
       message: "Report created successfully",
-      data: populatedReport
+      data: populatedReport,
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: "Error creating report",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-// GET ALL REPORTS
+/**
+ * GET ALL REPORTS
+ */
 export const getAllReports = async (req, res) => {
   try {
     const reports = await Report.find()
       .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village");
+      .populate("wellId", "name village")
+      .sort({ createdAt: -1 });
 
-    res.status(200).json(reports);
+    res.status(200).json({
+      success: true,
+      count: reports.length,
+      data: reports,
+    });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: "Error fetching reports",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-// GET REPORT BY ID
+/**
+ * GET REPORT BY ID
+ */
 export const getReportById = async (req, res) => {
   try {
     const report = await Report.findById(req.params.id)
@@ -47,19 +59,28 @@ export const getReportById = async (req, res) => {
       .populate("wellId", "name village");
 
     if (!report) {
-      return res.status(404).json({ message: "Report not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Report not found",
+      });
     }
 
-    res.status(200).json(report);
+    res.status(200).json({
+      success: true,
+      data: report,
+    });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: "Error fetching report",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-// UPDATE REPORT
+/**
+ * UPDATE REPORT
+ */
 export const updateReport = async (req, res) => {
   try {
     const updatedReport = await Report.findByIdAndUpdate(
@@ -71,35 +92,49 @@ export const updateReport = async (req, res) => {
       .populate("wellId", "name village");
 
     if (!updatedReport) {
-      return res.status(404).json({ message: "Report not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Report not found",
+      });
     }
 
     res.status(200).json({
+      success: true,
       message: "Report updated successfully",
-      data: updatedReport
+      data: updatedReport,
     });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: "Error updating report",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
-// DELETE REPORT
+/**
+ * DELETE REPORT
+ */
 export const deleteReport = async (req, res) => {
   try {
     const deletedReport = await Report.findByIdAndDelete(req.params.id);
 
     if (!deletedReport) {
-      return res.status(404).json({ message: "Report not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Report not found",
+      });
     }
 
-    res.status(200).json({ message: "Report deleted successfully" });
+    res.status(200).json({
+      success: true,
+      message: "Report deleted successfully",
+    });
   } catch (error) {
     res.status(500).json({
+      success: false,
       message: "Error deleting report",
-      error: error.message
+      error: error.message,
     });
   }
 };
