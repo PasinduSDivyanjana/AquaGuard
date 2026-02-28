@@ -1,5 +1,5 @@
 /**
- * Well routes - /api/v1/wells
+ * Well routes - /api/wells
  * All routes require authentication (protect). Delete requires admin.
  */
 

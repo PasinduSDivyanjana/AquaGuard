@@ -13,7 +13,6 @@ import mongoose from 'mongoose';
 
 import routes from './routes/index.js';
 import { errorHandler, notFound } from './middleware/error.js';
-import { setupSwagger } from './docs/swagger.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -33,10 +32,8 @@ app.use(express.urlencoded({ extended: true }));
 
 // Static files (report/well images when not using Cloudinary)
 app.use('/uploads', express.static(uploadsDir));
-// API routes under /api/v1
-app.use('/api/v1', routes);
-// Swagger API docs at /api-docs
-setupSwagger(app);
+// API routes under /api
+app.use('/api', routes);
 
 // Health check routes
 app.get('/', (req, res) => {
@@ -60,7 +57,6 @@ const dbConnect = async () => {
     console.log('MongoDB Successfully Connected');
     app.listen(PORT, () => {
       console.log(`Server Running on PORT ${PORT}`);
-      console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
     });
   } catch (err) {
     console.error('Error while connecting to MongoDB');

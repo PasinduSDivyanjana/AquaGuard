@@ -3,7 +3,7 @@
  */
 
 import WellModel from '../models/Well.js';
-import WaterTestModel from '../models/Report.js';
+import ReportModel from '../models/Report.js';
 import { getWeatherForWell } from '../services/weatherService.js';
 import { isCloudinaryConfigured } from '../config/cloudinary.js';
 import path from 'path';
@@ -89,7 +89,7 @@ export const updateWell = async (req, res, next) => {
   }
 };
 
-// Delete well (only if no water tests / examinations exist)
+// Delete well (only if no condition reports exist)
 export const deleteWell = async (req, res, next) => {
   try {
     const well = await WellModel.findById(req.params.id);
@@ -98,9 +98,9 @@ export const deleteWell = async (req, res, next) => {
       error.statusCode = 404;
       throw error;
     }
-    const hasExaminations = await WaterTestModel.exists({ wellId: req.params.id });
-    if (hasExaminations) {
-      const error = new Error('Cannot delete well that has been examined. Remove water tests first.');
+    const hasReports = await ReportModel.exists({ wellId: req.params.id });
+    if (hasReports) {
+      const error = new Error('Cannot delete well that has reports. Remove reports first.');
       error.statusCode = 400;
       throw error;
     }

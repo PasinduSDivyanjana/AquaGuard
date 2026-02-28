@@ -1,5 +1,5 @@
 import { env } from '../config/env.js';
-import { Well } from '../models/Well.model.js';
+import WellModel from '../models/Well.js';
 
 const buildWeatherUrl = (lat, lng) => {
   const base = env.OPENWEATHER_BASE_URL.replace(/\/$/, '');
@@ -19,7 +19,7 @@ export const getWeatherForWell = async (wellId) => {
     throw error;
   }
 
-  const well = await Well.findById(wellId).lean();
+  const well = await WellModel.findById(wellId).lean();
   if (!well) {
     const notFound = new Error('Well not found');
     notFound.statusCode = 404;
