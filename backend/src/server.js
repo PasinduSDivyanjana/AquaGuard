@@ -12,7 +12,7 @@ import fs from 'fs';
 import mongoose from 'mongoose';
 
 import routes from './routes/index.js';
-import { errorHandler, notFound } from './middleware/error.js';
+import { errorHandler, notFound } from './middlewares/error.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

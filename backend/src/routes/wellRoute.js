@@ -6,10 +6,10 @@
 import { Router } from 'express';
 import { body, param } from 'express-validator';
 import * as wellController from '../controllers/wellController.js';
-import protect from '../middleware/auth.js';
-import { restrictTo } from '../middleware/role.js';
-import { validate } from '../middleware/validation.js';
-import { uploadWellPhotos } from '../middleware/upload.js';
+import protect from '../middlewares/auth.js';
+import { restrictTo } from '../middlewares/role.js';
+import { validate } from '../middlewares/validation.js';
+import { uploadWellPhotos } from '../middlewares/upload.js';
 
 const createWellValidation = [
   body('name').trim().notEmpty().withMessage('Well name is required'),
