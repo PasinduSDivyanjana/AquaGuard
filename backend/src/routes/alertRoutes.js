@@ -30,19 +30,19 @@ import {
   rejectAlertAndAutoTask,
 } from "../controllers/alertController.js";
 
-import { authenticate } from "../middleware/authMiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { allowRoles } from "../middleware/roleMiddleware.js";
 
 const router = express.Router();
 
-router.get("/", authenticate, getAllAlerts);
-router.get("/:id", authenticate, getAlertDetails);
-router.put("/:id/read", authenticate, markRead);
+router.get("/", protect, getAllAlerts);
+router.get("/:id", protect, getAlertDetails);
+router.put("/:id/read", protect, markRead);
 
 // Only officer or admin can create alerts
 router.post(
   "/well/:wellId",
-  authenticate,
+  protect,
   allowRoles("officer", "admin"),
   createAlertAndMaybeAutoTask
 );
@@ -50,14 +50,14 @@ router.post(
 // Only admin can accept/reject
 router.post(
   "/:id/accept",
-  authenticate,
+  protect,
   allowRoles("admin"),
   acceptAlertAndCreateTask
 );
 
 router.post(
   "/:id/reject",
-  authenticate,
+  protect,
   allowRoles("admin"),
   rejectAlertAndAutoTask
 );
