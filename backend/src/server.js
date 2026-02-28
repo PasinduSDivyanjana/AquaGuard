@@ -1,19 +1,76 @@
-import express from "express";
-import { connectDB } from "./config/db.js";
-import dotenv from "dotenv";
-import cors from "cors";
+/**
+ * AquaGuard Backend - Rural Water Well Monitoring System
+ * Entry point: loads env, sets up Express, connects MongoDB, starts server
+ */
 
-dotenv.config();
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import mongoose from 'mongoose';
 
-const PORT = process.env.PORT || 5001;
+import routes from './routes/index.js';
+import { errorHandler, notFound } from './middleware/error.js';
+import { setupSwagger } from './docs/swagger.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Ensure uploads folder exists (for local file storage when Cloudinary not configured)
+const uploadsDir = path.join(__dirname, '../uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:5173" })); //This middleware will allow cross-origin requests
-app.use(express.json()); //This middleware will parse the JSON body
+// Middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-connectDB().then(() => {
-  app.listen(PORT, () => {
-    console.log("Server started in port", PORT);
-  });
+// Static files (report/well images when not using Cloudinary)
+app.use('/uploads', express.static(uploadsDir));
+// API routes under /api/v1
+app.use('/api/v1', routes);
+// Swagger API docs at /api-docs
+setupSwagger(app);
+
+// Health check routes
+app.get('/', (req, res) => {
+  res.send('AquaGuard Backend is running...');
 });
+
+app.get('/health', (req, res) => {
+  res.status(200).json({ success: true, message: 'AquaGuard API is running' });
+});
+
+// Error handling (404 and generic)
+app.use(notFound);
+app.use(errorHandler);
+
+const PORT = process.env.PORT || 5001;
+
+// Connect to MongoDB and start server
+const dbConnect = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/aquaguard');
+    console.log('MongoDB Successfully Connected');
+    app.listen(PORT, () => {
+      console.log(`Server Running on PORT ${PORT}`);
+      console.log(`Swagger docs: http://localhost:${PORT}/api-docs`);
+    });
+  } catch (err) {
+    console.error('Error while connecting to MongoDB');
+    console.error('Error was:', err);
+  }
+};
+
+// Skip server start when running tests (allows supertest to use app)
+if (process.env.NODE_ENV !== 'test') {
+  dbConnect();
+}
+
+export default app;
