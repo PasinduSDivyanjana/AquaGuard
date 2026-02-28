@@ -1,15 +1,17 @@
 import Report from "../models/Report.js";
+import { createReportService } from "../services/report.service.js";
 
 /**
  * CREATE REPORT
  */
 export const createReport = async (req, res) => {
   try {
-    const report = await Report.create(req.body);
+    const report = await createReportService(req.body);
 
-    const populatedReport = await Report.findById(report._id)
-      .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village");
+    const populatedReport = await report.populate([
+      { path: "reportedBy", select: "firstName lastName email" },
+      { path: "wellId", select: "name village status" },
+    ]);
 
     res.status(201).json({
       success: true,
@@ -24,7 +26,6 @@ export const createReport = async (req, res) => {
     });
   }
 };
-
 /**
  * GET ALL REPORTS
  */
@@ -32,7 +33,7 @@ export const getAllReports = async (req, res) => {
   try {
     const reports = await Report.find()
       .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village")
+      .populate("wellId", "name village status")
       .sort({ createdAt: -1 });
 
     res.status(200).json({
@@ -56,7 +57,7 @@ export const getReportById = async (req, res) => {
   try {
     const report = await Report.findById(req.params.id)
       .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village");
+      .populate("wellId", "name village status");
 
     if (!report) {
       return res.status(404).json({
@@ -89,7 +90,7 @@ export const updateReport = async (req, res) => {
       { new: true, runValidators: true }
     )
       .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village");
+      .populate("wellId", "name village status");
 
     if (!updatedReport) {
       return res.status(404).json({
