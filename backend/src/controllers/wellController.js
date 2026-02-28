@@ -5,8 +5,43 @@
 import WellModel from '../models/Well.js';
 import ReportModel from '../models/Report.js';
 import { getWeatherForWell } from '../services/weatherService.js';
-import { isCloudinaryConfigured } from '../config/cloudinary.js';
+import { cloudinary, isCloudinaryConfigured } from '../config/cloudinary.js';
 import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const UPLOADS_DIR = path.join(__dirname, '../../uploads');
+
+function extractCloudinaryPublicId(url) {
+  const match = String(url).match(/\/v\d+\/(.+)\.\w+$/);
+  return match ? match[1] : null;
+}
+
+async function deletePhoto(photoUrl) {
+  if (!photoUrl) return;
+  if (photoUrl.startsWith('http') && photoUrl.includes('cloudinary.com')) {
+    const publicId = extractCloudinaryPublicId(photoUrl);
+    if (publicId && isCloudinaryConfigured()) {
+      try {
+        await cloudinary.uploader.destroy(publicId);
+      } catch (err) {
+        console.error('Cloudinary delete failed:', err.message);
+      }
+    }
+  } else {
+    const filename = photoUrl.replace(/^\/uploads\/?/, '');
+    if (filename) {
+      const filePath = path.join(UPLOADS_DIR, filename);
+      try {
+        if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      } catch (err) {
+        console.error('Local file delete failed:', err.message);
+      }
+    }
+  }
+}
 
 // Create well (with optional photos, up to 5)
 export const createWell = async (req, res, next) => {
@@ -103,6 +138,10 @@ export const deleteWell = async (req, res, next) => {
       const error = new Error('Cannot delete well that has reports. Remove reports first.');
       error.statusCode = 400;
       throw error;
+    }
+    // Delete uploaded photos (Cloudinary or local)
+    if (well.photos?.length) {
+      await Promise.all(well.photos.map((p) => deletePhoto(p)));
     }
     await WellModel.findByIdAndDelete(req.params.id);
     res.status(200).json({ success: true, message: 'Well deleted successfully' });

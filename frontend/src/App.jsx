@@ -1,34 +1,40 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import viteLogo from "/vite.svg";
-import "./App.css";
+import { Routes, Route, Link } from "react-router-dom";
+import WellList from "./components/WellList";
+import AddWell from "./components/AddWell";
+import EditWell from "./components/EditWell";
 
 function App() {
-  const [count, setCount] = useState(0);
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div>
+      <nav className="bg-teal-700 text-white py-3 px-4">
+        <div className="max-w-5xl mx-auto flex items-center gap-4">
+          <Link to="/" className="font-bold text-lg">
+            AquaGuard
+          </Link>
+          <Link to="/wells" className="hover:underline">
+            Wells
+          </Link>
+        </div>
+      </nav>
+
+      <Routes>
+        <Route path="/" element={
+          <div className="min-h-screen bg-slate-50 py-12 px-4 text-center">
+            <h1 className="text-3xl font-bold text-slate-800 mb-4">AquaGuard</h1>
+            <p className="text-slate-600 mb-6">Rural Water Well Monitoring</p>
+            <Link
+              to="/wells"
+              className="inline-block bg-teal-600 hover:bg-teal-700 text-white px-6 py-3 rounded-lg font-medium"
+            >
+              View Wells
+            </Link>
+          </div>
+        } />
+        <Route path="/wells" element={<WellList />} />
+        <Route path="/wells/add" element={<AddWell />} />
+        <Route path="/wells/:id" element={<EditWell />} />
+      </Routes>
+    </div>
   );
 }
 
