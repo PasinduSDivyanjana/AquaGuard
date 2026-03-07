@@ -13,9 +13,14 @@ import mongoose from 'mongoose';
 
 import routes from './routes/index.js';
 import { errorHandler, notFound } from './middlewares/error.js';
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load Swagger document
+const swaggerDocument = YAML.load(path.join(__dirname, '../swagger_docs/wellRoute_swagger.yaml'));
 
 // Ensure uploads folder exists (for local file storage when Cloudinary not configured)
 const uploadsDir = path.join(__dirname, '../uploads');
@@ -29,6 +34,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Swagger UI at /api-docs
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Static files (report/well images when not using Cloudinary)
 app.use('/uploads', express.static(uploadsDir));

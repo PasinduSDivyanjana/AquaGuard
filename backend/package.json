@@ -20,6 +20,8 @@
     "mongoose": "^7.0.3",
     "multer": "^2.1.0",
     "multer-storage-cloudinary": "^4.0.0",
-    "nodemon": "^3.1.14"
+    "nodemon": "^3.1.14",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   }
 }
