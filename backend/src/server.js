@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import mongoose from 'mongoose';
 
-import routes from './routes/index.js';
+import wellRoute from './routes/wellRoute.js';
 import { errorHandler, notFound } from './middlewares/error.js';
 import swaggerUi from 'swagger-ui-express';
 import YAML from 'yamljs';
@@ -40,8 +40,8 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 
 // Static files (report/well images when not using Cloudinary)
 app.use('/uploads', express.static(uploadsDir));
-// API routes under /api
-app.use('/api', routes);
+// API routes
+app.use('/api/wells', wellRoute);
 
 // Health check routes
 app.get('/', (req, res) => {
@@ -65,6 +65,7 @@ const dbConnect = async () => {
     console.log('MongoDB Successfully Connected');
     app.listen(PORT, () => {
       console.log(`Server Running on PORT ${PORT}`);
+      console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
     });
   } catch (err) {
     console.error('Error while connecting to MongoDB');
