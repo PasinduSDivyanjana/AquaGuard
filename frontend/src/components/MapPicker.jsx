@@ -28,7 +28,7 @@ export default function MapPicker({ lat, lng, onChange, height = '200px' }) {
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
+      setLocationError('Geolocation is not supported');
       return;
     }
     setLocationError('');
@@ -55,7 +55,7 @@ export default function MapPicker({ lat, lng, onChange, height = '200px' }) {
           });
         }
       },
-      () => setLocationError('Could not get your location. Check browser permissions.'),
+      () => setLocationError('Could not get location. Check permissions.'),
       { enableHighAccuracy: true }
     );
   };
@@ -125,21 +125,21 @@ export default function MapPicker({ lat, lng, onChange, height = '200px' }) {
   if (!API_KEY) return null;
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-1">
-        <p className="text-xs text-slate-500">Click on map to set location (or drag marker)</p>
+    <div className="animate-fade-in">
+      <div className="flex justify-between items-center mb-1.5 px-1">
+        <p className="text-xs text-slate-500">Click map or drag marker to set location</p>
         {onChange && (
           <button
             type="button"
             onClick={getCurrentLocation}
-            className="text-xs bg-teal-100 hover:bg-teal-200 text-teal-800 px-2 py-1 rounded font-medium"
+            className="text-xs font-medium text-ocean-600 bg-ocean-50 hover:bg-ocean-100 px-2.5 py-1.5 rounded-lg transition-colors"
           >
             Use my location
           </button>
         )}
       </div>
-      {locationError && <p className="text-xs text-red-600 mb-1">{locationError}</p>}
-      <div ref={mapRef} style={{ height }} className="w-full rounded-lg border border-slate-200" />
+      {locationError && <p className="text-xs text-rose-600 mb-1 px-1">{locationError}</p>}
+      <div ref={mapRef} style={{ height }} className="w-full rounded-xl border border-slate-200 overflow-hidden" />
     </div>
   );
 }

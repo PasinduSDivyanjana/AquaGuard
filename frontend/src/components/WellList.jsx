@@ -6,11 +6,11 @@ import MapPicker from './MapPicker';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const STATUS_OPTIONS = ['Good', 'Needs Repair', 'Contaminated', 'Dry'];
-const STATUS_CLASS = {
-  Good: 'bg-green-100 text-green-800',
-  'Needs Repair': 'bg-amber-100 text-amber-800',
-  Contaminated: 'bg-red-100 text-red-800',
-  Dry: 'bg-slate-200 text-slate-700',
+const STATUS_STYLES = {
+  Good: 'bg-emerald-100 text-emerald-800 border-emerald-200',
+  'Needs Repair': 'bg-amber-100 text-amber-800 border-amber-200',
+  Contaminated: 'bg-rose-100 text-rose-800 border-rose-200',
+  Dry: 'bg-slate-100 text-slate-700 border-slate-200',
 };
 
 export default function WellList() {
@@ -88,69 +88,63 @@ export default function WellList() {
   const photoUrl = (url) => (url?.startsWith('http') ? url : `${API_URL}${url}`);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-slate-800">Wells</h1>
-          <Link
-            to="/wells/add"
-            className="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium"
-          >
-            Add Well
-          </Link>
+    <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-slide-up">
+        <h1 className="font-display font-bold text-2xl text-slate-900">Wells</h1>
+        <Link to="/wells/add" className="btn-primary shrink-0">
+          Add well
+        </Link>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 animate-fade-in">
+          {error}
         </div>
+      )}
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg">{error}</div>
-        )}
+      <form onSubmit={onSearch} className="flex flex-wrap gap-3 mb-6 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+        <input
+          type="text"
+          placeholder="Search by name"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="input-field w-48"
+        />
+        <select
+          value={status}
+          onChange={(e) => { setStatus(e.target.value); setPage(1); }}
+          className="input-field w-40"
+        >
+          <option value="">All statuses</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>{s}</option>
+          ))}
+        </select>
+        <button type="submit" className="btn-secondary">Search</button>
+      </form>
 
-        <form onSubmit={onSearch} className="flex gap-2 mb-6 flex-wrap">
-          <input
-            type="text"
-            placeholder="Search by name"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border border-slate-300 rounded-lg px-3 py-2 w-48"
-          />
-          <select
-            value={status}
-            onChange={(e) => {
-              setStatus(e.target.value);
-              setPage(1);
-            }}
-            className="border border-slate-300 rounded-lg px-3 py-2"
-          >
-            <option value="">All statuses</option>
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <button
-            type="submit"
-            className="bg-slate-200 hover:bg-slate-300 px-4 py-2 rounded-lg"
-          >
-            Search
-          </button>
-        </form>
-
-        {loading ? (
-          <div className="text-slate-500 py-12 text-center">Loading wells...</div>
-        ) : wells.length === 0 ? (
-          <div className="bg-white rounded-xl border border-slate-200 p-12 text-center text-slate-500">
-            No wells found. <Link to="/wells/add" className="text-teal-600 hover:underline">Add one</Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
+      {loading ? (
+        <div className="card p-12 text-center text-slate-500">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-ocean-500 border-t-transparent" />
+          <p className="mt-3">Loading wells…</p>
+        </div>
+      ) : wells.length === 0 ? (
+        <div className="card p-12 text-center text-slate-500 animate-fade-in">
+          No wells found. <Link to="/wells/add" className="text-ocean-600 font-medium hover:underline">Add one</Link>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slide-up">
+          <div className="lg:col-span-2">
+            <div className="card overflow-hidden">
+              <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-slate-100">
-                    <tr>
-                      <th className="text-left p-3 font-medium text-slate-700">Name</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Location</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Status</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Last Inspected</th>
-                      <th className="text-left p-3 font-medium text-slate-700">Actions</th>
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50/80">
+                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
+                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Location</th>
+                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
+                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Last inspected</th>
+                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -158,36 +152,25 @@ export default function WellList() {
                       <tr
                         key={w._id}
                         onClick={() => setSelectedWell(w)}
-                        className={`border-t border-slate-200 hover:bg-slate-50 cursor-pointer transition-colors ${selectedWell?._id === w._id ? 'bg-teal-50' : ''}`}
+                        className={`border-b border-slate-100 cursor-pointer transition-colors ${
+                          selectedWell?._id === w._id ? 'bg-ocean-50/70' : 'hover:bg-slate-50/80'
+                        }`}
                       >
-                        <td className="p-3">{w.name}</td>
-                        <td className="p-3 text-slate-600">
+                        <td className="p-4 font-medium text-slate-900">{w.name}</td>
+                        <td className="p-4 text-slate-600 text-sm">
                           {w.location?.lat?.toFixed(4)}, {w.location?.lng?.toFixed(4)}
                         </td>
-                        <td className="p-3">
-                          <span
-                            className={`px-2 py-1 rounded text-sm ${STATUS_CLASS[w.status] || STATUS_CLASS.Dry}`}
-                          >
+                        <td className="p-4">
+                          <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium border ${STATUS_STYLES[w.status] || STATUS_STYLES.Dry}`}>
                             {w.status}
                           </span>
                         </td>
-                        <td className="p-3 text-slate-600">
-                          {w.lastInspected
-                            ? new Date(w.lastInspected).toLocaleDateString()
-                            : '—'}
+                        <td className="p-4 text-slate-600 text-sm">
+                          {w.lastInspected ? new Date(w.lastInspected).toLocaleDateString() : '—'}
                         </td>
-                        <td className="p-3" onClick={(e) => e.stopPropagation()}>
-                          <Link
-                            to={`/wells/${w._id}`}
-                            className="text-teal-600 hover:underline mr-3"
-                          >
-                            Edit
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={() => handleDelete(w._id, w.name)}
-                            className="text-red-600 hover:underline"
-                          >
+                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
+                          <Link to={`/wells/${w._id}`} className="btn-ghost text-ocean-600 mr-2">Edit</Link>
+                          <button type="button" onClick={() => handleDelete(w._id, w.name)} className="btn-ghost text-coral-600 hover:bg-rose-50">
                             Delete
                           </button>
                         </td>
@@ -196,96 +179,77 @@ export default function WellList() {
                   </tbody>
                 </table>
               </div>
-
-              {totalPages > 1 && (
-                <div className="flex gap-2 mt-4 items-center">
-                  <button
-                    disabled={page <= 1}
-                    onClick={() => setPage((p) => p - 1)}
-                    className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-slate-100"
-                  >
-                    Prev
-                  </button>
-                  <span className="text-slate-600">Page {page} of {totalPages}</span>
-                  <button
-                    disabled={page >= totalPages}
-                    onClick={() => setPage((p) => p + 1)}
-                    className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-slate-100"
-                  >
-                    Next
-                  </button>
-                </div>
-              )}
             </div>
 
-            <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-slate-800">Well Details</h2>
-              {selectedWell ? (
-                <>
-                  <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
-                    <MapPicker
-                      lat={selectedWell.location?.lat}
-                      lng={selectedWell.location?.lng}
-                      height="180px"
-                    />
-                  </div>
-
-                  {selectedWell.photos?.length > 0 && (
-                    <div className="bg-white rounded-xl border border-slate-200 p-4">
-                      <h3 className="text-sm font-medium text-slate-700 mb-2">Photos</h3>
-                      <div className="flex gap-2 flex-wrap">
-                        {selectedWell.photos.map((url, i) => (
-                          <a
-                            key={i}
-                            href={photoUrl(url)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <img
-                              src={photoUrl(url)}
-                              alt={`Well ${i + 1}`}
-                              className="h-16 w-16 object-cover rounded-lg border border-slate-200 hover:opacity-90"
-                            />
-                          </a>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="bg-white rounded-xl border border-slate-200 p-4">
-                    <h3 className="text-sm font-medium text-slate-700 mb-2">OpenWeather</h3>
-                    {weatherLoading && !weather ? (
-                      <p className="text-sm text-slate-500">Loading weather…</p>
-                    ) : weather ? (
-                      <div className="text-sm text-slate-600 space-y-1">
-                        <p className="font-medium text-slate-800">{weather.wellName}</p>
-                        <p className="capitalize">{weather.summary?.weather || '—'}</p>
-                        <p>
-                          {weather.summary?.temperature != null && `${Math.round(weather.summary.temperature)}°C`}
-                          {weather.summary?.humidity != null && ` · Humidity ${weather.summary.humidity}%`}
-                        </p>
-                        <p>Rain: {weather.summary?.rainfallMm != null ? `${weather.summary.rainfallMm} mm` : '0 mm'}</p>
-                        <p className="capitalize">Water level trend: {weather.summary?.waterLevelTrend || '—'}</p>
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-500">Weather unavailable.</p>
-                    )}
-                  </div>
-
-                  <Link
-                    to={`/wells/${selectedWell._id}`}
-                    className="block text-center text-teal-600 hover:underline font-medium"
-                  >
-                    Edit this well →
-                  </Link>
-                </>
-              ) : (
-                <p className="text-sm text-slate-500">Click a well row to see details, photos, and weather.</p>
-              )}
-            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="btn-ghost disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  Previous
+                </button>
+                <span className="text-sm text-slate-600">Page {page} of {totalPages}</span>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="btn-ghost disabled:opacity-50 disabled:pointer-events-none"
+                >
+                  Next
+                </button>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+
+          <div className="space-y-6">
+            <h2 className="font-display font-semibold text-slate-900">Details</h2>
+            {selectedWell ? (
+              <>
+                <div className="card overflow-hidden p-0">
+                  <MapPicker lat={selectedWell.location?.lat} lng={selectedWell.location?.lng} height="180px" />
+                </div>
+                {selectedWell.photos?.length > 0 && (
+                  <div className="card p-4">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Photos</h3>
+                    <div className="flex gap-2 flex-wrap">
+                      {selectedWell.photos.map((url, i) => (
+                        <a key={i} href={photoUrl(url)} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-slate-200 hover:border-ocean-300 transition-colors">
+                          <img src={photoUrl(url)} alt={`Well ${i + 1}`} className="h-16 w-16 object-cover" />
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <div className="card p-4">
+                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Weather</h3>
+                  {weatherLoading && !weather ? (
+                    <p className="text-sm text-slate-500">Loading…</p>
+                  ) : weather ? (
+                    <div className="text-sm text-slate-600 space-y-1.5">
+                      <p className="font-medium text-slate-800">{weather.wellName}</p>
+                      <p className="capitalize">{weather.summary?.weather || '—'}</p>
+                      <p>
+                        {weather.summary?.temperature != null && `${Math.round(weather.summary.temperature)}°C`}
+                        {weather.summary?.humidity != null && ` · ${weather.summary.humidity}% humidity`}
+                      </p>
+                      <p>Rain: {weather.summary?.rainfallMm != null ? `${weather.summary.rainfallMm} mm` : '0 mm'}</p>
+                      <p className="capitalize">Trend: {weather.summary?.waterLevelTrend || '—'}</p>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-slate-500">Weather unavailable.</p>
+                  )}
+                </div>
+                <Link to={`/wells/${selectedWell._id}`} className="btn-secondary w-full justify-center">
+                  Edit this well
+                </Link>
+              </>
+            ) : (
+              <p className="text-sm text-slate-500">Select a well to see details, photos, and weather.</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
