@@ -2,7 +2,6 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import { sendRegistrationOTPEmail } from "../config/email.js";
 
-
 // ✅ Create User
 export const createUser = async (req, res) => {
   try {
