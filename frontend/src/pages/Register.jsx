@@ -10,7 +10,6 @@ const Register = () => {
     lastName: "",
     email: "",
     password: "",
-    confirmPassword: "",
     nic: "",
     mobile: "",
     address: "",
@@ -38,13 +37,13 @@ const Register = () => {
       "lastName",
       "email",
       "password",
-      "confirmPassword",
       "nic",
       "mobile",
       "address",
       "gender",
       "dob",
     ];
+
     for (let field of requiredFields) {
       if (!formData[field]) {
         setError(
@@ -54,34 +53,34 @@ const Register = () => {
       }
     }
 
-    if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return false;
-    }
-
+    // Password validation
     if (formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
       return false;
     }
 
+    // NIC validation
     const nicRegex = /^([0-9]{9}[vVxX]|[0-9]{12})$/;
     if (!nicRegex.test(formData.nic)) {
       setError("Please enter a valid NIC (9 digits with V/X or 12 digits)");
       return false;
     }
 
+    // Mobile validation
     const mobileRegex = /^[0-9]{10}$/;
     if (!mobileRegex.test(formData.mobile)) {
       setError("Please enter a valid 10-digit mobile number");
       return false;
     }
 
+    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       setError("Please enter a valid email address");
       return false;
     }
 
+    // Age validation (must be at least 18)
     const birthDate = new Date(formData.dob);
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
@@ -97,6 +96,7 @@ const Register = () => {
       return false;
     }
 
+    // Terms acceptance
     if (!formData.termsAccepted) {
       setError("You must accept the terms and conditions");
       return false;
@@ -116,27 +116,41 @@ const Register = () => {
     }
 
     try {
-      const { ...userData } = formData;
+      // Prepare registration data (without confirmPassword)
       const registrationData = {
-        ...userData,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        password: formData.password,
+        nic: formData.nic,
+        mobile: formData.mobile,
+        address: formData.address,
+        gender: formData.gender,
+        dob: formData.dob,
+        termsAccepted: formData.termsAccepted,
         role: "User",
       };
 
+      console.log("Sending registration data:", registrationData);
+
       const response = await axios.post(
-        "http://localhost:5001/api/register",
+        "http://localhost:5001/api/user/register",
         registrationData
       );
 
       if (response.data.success) {
-        toast.success(response.data.message);
+        toast.success(
+          response.data.message ||
+            "Registration successful! Please verify your email."
+        );
         setEmail(formData.email);
         setStep("verify");
+        // Clear form data
         setFormData({
           firstName: "",
           lastName: "",
           email: "",
           password: "",
-          confirmPassword: "",
           nic: "",
           mobile: "",
           address: "",
@@ -144,8 +158,11 @@ const Register = () => {
           dob: "",
           termsAccepted: false,
         });
+      } else {
+        throw new Error(response.data.message || "Registration failed");
       }
     } catch (err) {
+      console.error("Registration error:", err);
       const errorMessage = err.response?.data?.message || "Registration failed";
       setError(errorMessage);
       toast.error(errorMessage);
@@ -161,7 +178,7 @@ const Register = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/users/verify-otp",
+        "http://localhost:5001/api/user/verify-registration-otp",
         {
           email,
           otp,
@@ -173,8 +190,11 @@ const Register = () => {
         setTimeout(() => {
           navigate("/login");
         }, 2000);
+      } else {
+        throw new Error(response.data.message || "Verification failed");
       }
     } catch (err) {
+      console.error("Verification error:", err);
       const errorMessage = err.response?.data?.message || "Verification failed";
       setError(errorMessage);
       toast.error(errorMessage);
@@ -188,17 +208,17 @@ const Register = () => {
     setLoading(true);
 
     try {
+      // If you have a resend OTP endpoint
       const response = await axios.post(
-        "http://localhost:5000/api/users/resend-otp",
-        {
-          email,
-        }
+        "http://localhost:5001/api/user/resend-registration-otp",
+        { email }
       );
 
       if (response.data.success) {
         toast.success("New OTP sent to your email");
       }
     } catch (err) {
+      console.error("Resend OTP error:", err);
       const errorMessage =
         err.response?.data?.message || "Failed to resend OTP";
       setError(errorMessage);
@@ -212,13 +232,13 @@ const Register = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-          <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
-            Verify Your Email
-          </h2>
-          <p className="text-center text-gray-600 mb-8">
-            We've sent a verification code to{" "}
-            <span className="font-semibold text-purple-600">{email}</span>
-          </p>
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-2">
+              Verify Your Email
+            </h2>
+            <p className="text-gray-600">We've sent a verification code to</p>
+            <p className="font-semibold text-purple-600 mt-1">{email}</p>
+          </div>
 
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -274,12 +294,14 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-4xl">
-        <h2 className="text-3xl font-bold text-center text-gray-800 mb-2">
-          Create Account
-        </h2>
-        <p className="text-center text-gray-600 mb-8">
-          Join us today! Fill in your details below.
-        </p>
+        <div className="text-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-800 mb-2">
+            Create Account
+          </h2>
+          <p className="text-gray-600">
+            Join us today! Fill in your details below.
+          </p>
+        </div>
 
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
@@ -289,6 +311,7 @@ const Register = () => {
 
         <form onSubmit={handleRegister}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* First Name */}
             <div>
               <label
                 htmlFor="firstName"
@@ -308,6 +331,7 @@ const Register = () => {
               />
             </div>
 
+            {/* Last Name */}
             <div>
               <label
                 htmlFor="lastName"
@@ -327,6 +351,7 @@ const Register = () => {
               />
             </div>
 
+            {/* Email */}
             <div className="md:col-span-2">
               <label
                 htmlFor="email"
@@ -346,6 +371,7 @@ const Register = () => {
               />
             </div>
 
+            {/* NIC */}
             <div>
               <label
                 htmlFor="nic"
@@ -368,6 +394,7 @@ const Register = () => {
               </p>
             </div>
 
+            {/* Mobile */}
             <div>
               <label
                 htmlFor="mobile"
@@ -387,6 +414,7 @@ const Register = () => {
               />
             </div>
 
+            {/* Gender */}
             <div>
               <label
                 htmlFor="gender"
@@ -409,6 +437,7 @@ const Register = () => {
               </select>
             </div>
 
+            {/* Date of Birth */}
             <div>
               <label
                 htmlFor="dob"
@@ -430,6 +459,7 @@ const Register = () => {
               </p>
             </div>
 
+            {/* Address */}
             <div className="md:col-span-2">
               <label
                 htmlFor="address"
@@ -449,6 +479,7 @@ const Register = () => {
               />
             </div>
 
+            {/* Password */}
             <div>
               <label
                 htmlFor="password"
@@ -468,25 +499,7 @@ const Register = () => {
               />
             </div>
 
-            <div>
-              <label
-                htmlFor="confirmPassword"
-                className="block text-gray-700 font-medium mb-2"
-              >
-                Confirm Password *
-              </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Confirm your password"
-              />
-            </div>
-
+            {/* Terms and Conditions */}
             <div className="md:col-span-2">
               <label className="flex items-center gap-3 cursor-pointer">
                 <input

@@ -4,120 +4,204 @@ import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [step, setStep] = useState("login");
+  const [formData, setFormData] = useState({ email: "", password: "" });
+  const [otp, setOtp] = useState("");
+  const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Step 1: Login
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const response = await axios.post(
-        "http://localhost:5000/api/login",
+      const res = await axios.post(
+        "http://localhost:5001/api/user/login",
         formData
       );
 
-      if (response.data.success) {
-        localStorage.setItem("token", response.data.token);
-        localStorage.setItem("user", JSON.stringify(response.data.data));
-        toast.success("Login successful!");
-        navigate("/dashboard");
+      if (res.data.success) {
+        setEmail(formData.email);
+        setStep("verify");
+        toast.success("OTP sent to your email!");
+        setFormData({ ...formData, password: "" });
+      } else {
+        throw new Error(res.data.message);
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Login failed";
-      setError(errorMessage);
-      toast.error(errorMessage);
+      const msg = err.response?.data?.message || "Invalid email or password";
+      setError(msg);
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-500 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2">
-            Welcome Back
-          </h2>
-          <p className="text-gray-600">Login to your account</p>
-        </div>
+  // Step 2: Verify OTP
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
+    try {
+      const res = await axios.post(
+        "http://localhost:5001/api/user/verify-login-otp",
+        { email, otp }
+      );
+
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        toast.success("Login successful!");
+        navigate("/userDashboard");
+      } else {
+        throw new Error(res.data.message);
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Invalid or expired OTP";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Resend OTP
+  const resendOTP = async () => {
+    setLoading(true);
+    setError("");
+
+    try {
+      const res = await axios.post(
+        "http://localhost:5001/api/user/resend-login-otp",
+        { email }
+      );
+
+      if (res.data.success) {
+        toast.success("New OTP sent!");
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to resend OTP";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ================= OTP SCREEN =================
+  if (step === "verify") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500">
+        <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+          <h2 className="text-xl font-bold text-center mb-4">Verify OTP</h2>
+          <p className="text-center text-gray-600 mb-4">
+            Sent to <span className="font-semibold">{email}</span>
+          </p>
+
+          {error && (
+            <div className="text-red-500 text-center mb-3">{error}</div>
+          )}
+
+          <form onSubmit={handleVerifyOTP}>
+            <input
+              type="text"
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              maxLength="6"
+              required
+              placeholder="Enter OTP"
+              className="w-full border p-3 rounded-lg text-center mb-4"
+            />
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-purple-600 text-white py-3 rounded-lg"
+            >
+              {loading ? "Verifying..." : "Verify & Login"}
+            </button>
+          </form>
+
+          <div className="text-center mt-4">
+            <button onClick={resendOTP} className="text-purple-600">
+              Resend OTP
+            </button>
           </div>
-        )}
+
+          <div className="text-center mt-2">
+            <button
+              onClick={() => setStep("login")}
+              className="text-gray-500 text-sm"
+            >
+              Back to login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ================= LOGIN SCREEN =================
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500">
+      <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+        <h2 className="text-2xl font-bold text-center mb-2">Welcome Back</h2>
+        <p className="text-center text-gray-600 mb-6">Login to your account</p>
+
+        {error && <div className="text-red-500 text-center mb-3">{error}</div>}
 
         <form onSubmit={handleSubmit}>
-          <div className="mb-6">
-            <label
-              htmlFor="email"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Enter your email"
-            />
-          </div>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            placeholder="Enter your email"
+            required
+            className="w-full border p-3 rounded-lg mb-4"
+          />
 
-          <div className="mb-6">
-            <label
-              htmlFor="password"
-              className="block text-gray-700 font-medium mb-2"
-            >
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="Enter your password"
-            />
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter your password"
+            required
+            className="w-full border p-3 rounded-lg mb-4"
+          />
+
+          <div className="text-right mb-4">
+            <Link to="/forgot-password" className="text-sm text-purple-600">
+              Forgot Password?
+            </Link>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-500 text-white font-semibold py-3 rounded-lg hover:from-purple-700 hover:to-blue-600 transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-purple-600 text-white py-3 rounded-lg"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
-        <p className="text-center text-gray-600 mt-6">
-          Don't have an account?{" "}
-          <Link
-            to="/register"
-            className="text-purple-600 hover:text-purple-700 font-medium"
-          >
-            Register here
+        <div className="text-center mt-6">
+          <p className="text-gray-600 mb-2">New user?</p>
+          <Link to="/register" className="text-purple-600 font-semibold">
+            Create Account
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );
