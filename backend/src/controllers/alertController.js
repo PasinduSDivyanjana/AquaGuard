@@ -80,7 +80,7 @@ export const createAlertAndMaybeAutoTask = async (req, res) => {
 export const acceptAlertAndCreateTask = async (req, res) => {
   const alert = await Alert.findById(req.params.id);
   if (!alert) return res.status(404).json({ message: "Alert not found" });
-  await Alert.findByIdAndUpdate(req.params.id, { read: true });
+  await Alert.findByIdAndUpdate(req.params.id, { read: true, status: "approved" });
   // Find related auto task
   const autoTask = await AutoTask.findOne({ well: alert.well, reason: alert.message, status: { $ne: "rejected" } });
   if (autoTask) {
@@ -103,7 +103,7 @@ export const acceptAlertAndCreateTask = async (req, res) => {
 export const rejectAlertAndAutoTask = async (req, res) => {
   const alert = await Alert.findById(req.params.id);
   if (!alert) return res.status(404).json({ message: "Alert not found" });
-  await Alert.findByIdAndUpdate(req.params.id, { read: true });
+  await Alert.findByIdAndUpdate(req.params.id, { read: true, status: "rejected" });
   // Find related auto task
   const autoTask = await AutoTask.findOne({ well: alert.well, reason: alert.message, status: { $ne: "rejected" } });
   if (autoTask) {
