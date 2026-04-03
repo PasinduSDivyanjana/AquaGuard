@@ -126,7 +126,7 @@ export const getAllUsers = async (req, res) => {
 // ✅ Get User By ID
 export const getUserByID = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
+    const user = await User.findById(req.user.id).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -142,7 +142,7 @@ export const getUserByID = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching user",
+      message: "Error fetching profile",
       error: error.message,
     });
   }

@@ -20,7 +20,7 @@ axiosInstance.interceptors.response.use(
     if (err.response?.status === 401) {
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-      window.location.href = "/";
+      window.location.href = "/login";
     }
     return Promise.reject(err);
   }
