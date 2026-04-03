@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
+import AdminDashboard from "./pages/AdminDashboard";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             </ProtectedRoute>
           }
         />
+        <Route path="/adminDashboard" element={<AdminDashboard />} />
       </Routes>
     </div>
   );

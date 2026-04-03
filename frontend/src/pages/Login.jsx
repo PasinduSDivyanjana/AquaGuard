@@ -54,11 +54,27 @@ const Login = () => {
       });
 
       if (res.data.success) {
+        const user = res.data.user;
+
         localStorage.setItem("token", res.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
+        localStorage.setItem("user", JSON.stringify(user));
 
         toast.success("Login successful!");
-        navigate("/userDashboard");
+
+        switch (user.role) {
+          case "Admin":
+            navigate("/adminDashboard");
+            break;
+
+          case "Reporter":
+            navigate("/reporterDashboard");
+            break;
+
+          case "User":
+          default:
+            navigate("/userDashboard");
+            break;
+        }
       } else {
         throw new Error(res.data.message);
       }
