@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import axiosInstance from "../utils/axiosInstance";
 import { useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
 
@@ -17,17 +17,14 @@ const Login = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Step 1: Login
+  // ================= LOGIN =================
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:5001/api/user/login",
-        formData
-      );
+      const res = await axiosInstance.post("/user/login", formData);
 
       if (res.data.success) {
         setEmail(formData.email);
@@ -46,23 +43,26 @@ const Login = () => {
     }
   };
 
-  // Step 2: Verify OTP
+  // ================= VERIFY OTP =================
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
     try {
-      const res = await axios.post(
-        "http://localhost:5001/api/user/verify-login-otp",
-        { email, otp }
-      );
+      const res = await axiosInstance.post("/user/verify-login-otp", {
+        email,
+        otp,
+      });
 
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
+
         toast.success("Login successful!");
-        navigate("/userDashboard");
+
+        setOtp(""); // clear OTP
+        navigate("/userDashboard"); // keep consistent route
       } else {
         throw new Error(res.data.message);
       }
@@ -75,19 +75,18 @@ const Login = () => {
     }
   };
 
-  // Resend OTP
+  // ================= RESEND OTP =================
   const resendOTP = async () => {
     setLoading(true);
     setError("");
 
     try {
-      const res = await axios.post(
-        "http://localhost:5001/api/user/resend-login-otp",
-        { email }
-      );
+      const res = await axiosInstance.post("/user/resend-login-otp", { email });
 
       if (res.data.success) {
         toast.success("New OTP sent!");
+      } else {
+        throw new Error(res.data.message);
       }
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to resend OTP";
@@ -104,6 +103,7 @@ const Login = () => {
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500">
         <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
           <h2 className="text-xl font-bold text-center mb-4">Verify OTP</h2>
+
           <p className="text-center text-gray-600 mb-4">
             Sent to <span className="font-semibold">{email}</span>
           </p>
@@ -120,30 +120,38 @@ const Login = () => {
               maxLength="6"
               required
               placeholder="Enter OTP"
-              className="w-full border p-3 rounded-lg text-center mb-4"
+              className="w-full border p-3 rounded-lg text-center mb-4 text-lg tracking-widest"
             />
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-purple-600 text-white py-3 rounded-lg"
+              className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition"
             >
               {loading ? "Verifying..." : "Verify & Login"}
             </button>
           </form>
 
           <div className="text-center mt-4">
-            <button onClick={resendOTP} className="text-purple-600">
+            <button
+              onClick={resendOTP}
+              disabled={loading}
+              className="text-purple-600 hover:underline"
+            >
               Resend OTP
             </button>
           </div>
 
           <div className="text-center mt-2">
             <button
-              onClick={() => setStep("login")}
-              className="text-gray-500 text-sm"
+              onClick={() => {
+                setStep("login");
+                setOtp("");
+                setError("");
+              }}
+              className="text-gray-500 text-sm hover:underline"
             >
-              Back to login
+              ← Back to login
             </button>
           </div>
         </div>
@@ -156,6 +164,7 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 to-blue-500">
       <div className="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-center mb-2">Welcome Back</h2>
+
         <p className="text-center text-gray-600 mb-6">Login to your account</p>
 
         {error && <div className="text-red-500 text-center mb-3">{error}</div>}
@@ -182,7 +191,10 @@ const Login = () => {
           />
 
           <div className="text-right mb-4">
-            <Link to="/forgot-password" className="text-sm text-purple-600">
+            <Link
+              to="/forgot-password"
+              className="text-sm text-purple-600 hover:underline"
+            >
               Forgot Password?
             </Link>
           </div>
@@ -190,7 +202,7 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-purple-600 text-white py-3 rounded-lg"
+            className="w-full bg-purple-600 text-white py-3 rounded-lg hover:bg-purple-700 transition"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
@@ -198,7 +210,11 @@ const Login = () => {
 
         <div className="text-center mt-6">
           <p className="text-gray-600 mb-2">New user?</p>
-          <Link to="/register" className="text-purple-600 font-semibold">
+
+          <Link
+            to="/register"
+            className="text-purple-600 font-semibold hover:underline"
+          >
             Create Account
           </Link>
         </div>
