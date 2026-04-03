@@ -22,6 +22,7 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [adminInfo, setAdminInfo] = useState(null);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeUsers: 0,
@@ -87,6 +88,7 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
+    setShowLogoutConfirm(false);
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     toast.success("Logged out successfully");
@@ -315,7 +317,7 @@ const AdminDashboard = () => {
           {/* Logout Button */}
           <div className="p-4 border-t border-[#172431]">
             <button
-              onClick={handleLogout}
+              onClick={() => setShowLogoutConfirm(true)}
               className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[#CA6162] hover:bg-[#CA6162]/10 transition-colors"
             >
               <svg
@@ -601,6 +603,35 @@ const AdminDashboard = () => {
           )}
         </div>
       </main>
+
+      {/* Logout Confirmation Modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-[#101624] rounded-lg w-full max-w-md mx-4 border border-[#172431] p-6">
+            <h3 className="text-xl font-bold text-white mb-4">
+              Confirm Logout
+            </h3>
+            <p className="text-[#9BA0A6] mb-6">
+              Are you sure you want to logout?
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={handleLogout}
+                className="flex-1 bg-[#CA6162] hover:bg-[#CA6162]/80 text-white py-2 rounded-lg transition-colors"
+              >
+                Yes, Logout
+              </button>
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 bg-[#172431] hover:bg-[#1a2a3a] text-white py-2 rounded-lg transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Custom Scrollbar Styles */}
       <style jsx>{`
