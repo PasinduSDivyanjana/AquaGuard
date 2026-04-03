@@ -5,48 +5,63 @@ import { sendRegistrationOTPEmail } from "../config/email.js";
 // ✅ Create User
 export const createUser = async (req, res) => {
   try {
-    const { email, password, ...rest } = req.body;
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      nic,
+      mobile,
+      address,
+      gender,
+      dob,
+      termsAccepted,
+    } = req.body;
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
 
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Email already registered",
+        message: "User already exists",
       });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // 🔥 Generate OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
-    // Generate OTP
-    const otp = generateOTP();
+    // 🔐 Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create user but NOT verified
-    const newUser = new User({
-      ...rest,
+    // 👤 Create USER (NOT VERIFIED YET)
+    const user = await User.create({
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
+      nic,
+      mobile,
+      address,
+      gender,
+      dob,
+      termsAccepted,
       otp,
-      otpExpires: Date.now() + 5 * 60 * 1000, // 5 minutes
+      otpExpires: Date.now() + 5 * 60 * 1000, // 5 min
       isVerified: false,
     });
 
-    await newUser.save();
-
-    // Send OTP
+    // 📧 Send OTP email
     await sendRegistrationOTPEmail(email, otp);
 
-    res.status(200).json({
+    return res.status(201).json({
       success: true,
-      message: "OTP sent to email. Please verify to complete registration.",
+      message: "OTP sent to email. Please verify your account.",
     });
   } catch (error) {
+    console.error("REGISTER ERROR:", error);
     res.status(500).json({
       success: false,
-      message: "Registration failed",
+      message: "Server error",
       error: error.message,
     });
   }
@@ -71,6 +86,13 @@ export const verifyRegistrationOTP = async (req, res) => {
       });
     }
 
+    if (user.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: "Account already verified",
+      });
+    }
+
     if (user.otp !== otp) {
       return res.status(400).json({
         success: false,
@@ -86,20 +108,19 @@ export const verifyRegistrationOTP = async (req, res) => {
     }
 
     user.isVerified = true;
-    user.otp = null;
-    user.otpExpires = null;
+    user.otp = undefined;
+    user.otpExpires = undefined;
 
     await user.save();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Account verified successfully",
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Verification failed",
-      error: error.message,
+      message: error.message,
     });
   }
 };
@@ -126,7 +147,7 @@ export const getAllUsers = async (req, res) => {
 // ✅ Get User By ID
 export const getUserByID = async (req, res) => {
   try {
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.params.id).select("-password");
 
     if (!user) {
       return res.status(404).json({
@@ -142,7 +163,7 @@ export const getUserByID = async (req, res) => {
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching profile",
+      message: "Error fetching user",
       error: error.message,
     });
   }

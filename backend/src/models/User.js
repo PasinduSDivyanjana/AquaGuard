@@ -1,10 +1,12 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 const userSchema = new mongoose.Schema(
   {
     userId: {
       type: String,
       unique: true,
+      default: uuidv4,
     },
     firstName: {
       type: String,
@@ -98,6 +100,29 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+userSchema.pre("save", async function (next) {
+  if (!this.isNew) return next();
+
+  try {
+    const lastUser = await this.constructor
+      .findOne({})
+      .sort({ createdAt: -1 })
+      .select("userId");
+
+    let nextId = "C001";
+
+    if (lastUser?.userId) {
+      const lastNum = parseInt(lastUser.userId.slice(1), 10);
+      nextId = `C${String(lastNum + 1).padStart(3, "0")}`;
+    }
+
+    this.userId = nextId;
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 const User = mongoose.model("User", userSchema);
 export default User;
