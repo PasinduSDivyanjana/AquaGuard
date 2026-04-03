@@ -13,6 +13,7 @@ import {
   verifyLoginOtp,
   forgotPassword,
   resetPassword,
+  updatePassword,
 } from "../controllers/authController.js";
 import { protect } from "../middlewares/authMiddleware.js";
 
@@ -29,6 +30,7 @@ router.get("/", getAllUsers); // Get all users (Admin only)
 router.get("/profile", protect, getProfile); // Get logged-in user's profile
 router.get("/:id", protect, getUserByID); // Get user by ID (Admin or self)
 
+router.put("/change-password", protect, updatePassword); //Update password by User
 router.put("/:id", updateUser); // Update user by ID (Admin or self)
 
 router.delete("/:id", deleteUser); // Delete user by ID (Admin or self)
