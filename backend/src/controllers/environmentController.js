@@ -11,6 +11,17 @@
 import { Well } from "../models/Well.js";
 import { fetchWeather } from "../services/weatherService.js";
 
+// Get all wells
+export const getAllWells = async (req, res) => {
+  try {
+    const wells = await Well.find();
+    return res.json(wells);
+  } catch (error) {
+    console.error("Error fetching wells:", error);
+    return res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 // Get weather for a specific well
 export const getWeather = async (req, res) => {
   try {
