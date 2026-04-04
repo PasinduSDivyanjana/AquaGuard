@@ -9,6 +9,11 @@ const alertSchema = new mongoose.Schema(
       type: String,
       enum: ["low", "medium", "high", "critical"],
     },
+    status: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
     read: { type: Boolean, default: false },
   },
   { timestamps: true }
