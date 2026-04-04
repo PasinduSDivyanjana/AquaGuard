@@ -260,15 +260,6 @@ const AdminDashboard = () => {
           {/* Logo */}
           <div className="flex items-center justify-between p-6 border-b border-[#172431]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] rounded-lg flex items-center justify-center">
-                <svg
-                  className="w-6 h-6 text-[#0A0E19]"
-                  fill="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 4c1.1 0 2 .9 2 2s-.9 2-2 2-2-.9-2-2 .9-2 2-2zm0 13c-2.33 0-4.31-1.46-5.11-3.5h10.22c-.8 2.04-2.78 3.5-5.11 3.5z" />
-                </svg>
-              </div>
               {sidebarOpen && (
                 <span className="text-white font-bold text-lg">AquaGuard</span>
               )}
