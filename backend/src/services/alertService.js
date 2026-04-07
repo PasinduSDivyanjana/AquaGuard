@@ -7,7 +7,7 @@ import { Well } from "../models/Well.js";
 import { fetchWeather } from "./weatherService.js";
 
 // Example: threshold values (customize as needed)
-const TEMP_THRESHOLD = 10; // Kelvin (about 37°C)
+const TEMP_THRESHOLD = 25; // Kelvin (about 37°C)
 const RAINFALL_THRESHOLD = 20; // mm
 
 // Create alert only (auto task creation handled in autoTaskController)
@@ -34,5 +34,6 @@ export const checkWeatherAndCreateAlert = async (wellId) => {
 
 // Export helper to check if alert should trigger auto task
 export const shouldTriggerAutoTask = (alert) => {
-  return alert.severity === "high" || alert.severity === "critical";
+  // Always create an auto task when an alert is generated
+  return !!alert;
 };
