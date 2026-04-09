@@ -38,7 +38,7 @@ function App() {
         <Route path="/alerts" element={<AlertsManagement />} />
         <Route path="/auto-tasks" element={<AutoTasksApproval />} />
         <Route path="/wells" element={<WellsAndWeather />} />
-        <Route path="/dahboard" element={<Dashboard />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </div>
   );
