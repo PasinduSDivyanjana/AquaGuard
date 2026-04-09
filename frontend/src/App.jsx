@@ -3,7 +3,7 @@ import WellList from './components/WellList';
 import AddWell from './components/AddWell';
 import EditWell from './components/EditWell';
 import AppBackground from './components/AppBackground';
-import HeroGraphic from './components/HeroGraphic';
+import Dashboard from './components/Dashboard';
 
 function App() {
   const location = useLocation();
@@ -45,36 +45,7 @@ function App() {
 
         <main className="content-wrap">
           <Routes>
-            <Route
-              path="/"
-              element={
-                <div>
-                  <div style={{ marginBottom: 14 }}>
-                    <h1 className="home-title">Dashboard</h1>
-                    <p className="home-subtitle">Status Overview for AquaGuard Systems</p>
-                  </div>
-
-                  <div className="dashboard-grid" style={{ marginBottom: 14 }}>
-                    <div className="kpi-card">
-                      <div className="kpi-label">Active Tasks</div>
-                      <div className="kpi-value">4</div>
-                    </div>
-                    <div className="kpi-card">
-                      <div className="kpi-label">Unread Alerts</div>
-                      <div className="kpi-value">0</div>
-                    </div>
-                    <div className="kpi-card">
-                      <div className="kpi-label">Pending Auto-Tasks</div>
-                      <div className="kpi-value">0</div>
-                    </div>
-                  </div>
-
-                  <div className="card" style={{ padding: 18 }}>
-                    <HeroGraphic />
-                  </div>
-                </div>
-              }
-            />
+            <Route path="/" element={<Dashboard />} />
             <Route path="/wells" element={<WellList />} />
             <Route path="/wells/add" element={<AddWell />} />
             <Route path="/wells/:id" element={<EditWell />} />

@@ -1,9 +1,10 @@
 export default function HeroGraphic() {
   return (
-    <div className="relative w-full max-w-md mx-auto h-48 sm:h-56 flex items-center justify-center">
+    <div className="relative z-[1] w-full max-w-md mx-auto h-52 sm:h-60 flex items-center justify-center">
       <svg
         viewBox="0 0 200 120"
-        className="w-full h-full drop-shadow-sm"
+        className="w-full h-full"
+        style={{ filter: 'drop-shadow(0 18px 28px rgba(0, 0, 0, 0.35))' }}
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
