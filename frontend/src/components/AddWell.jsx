@@ -76,12 +76,24 @@ export default function AddWell() {
   };
 
   return (
-    <div className="max-w-lg mx-auto px-4 py-8 animate-slide-up">
-      <h1 className="font-display font-bold text-2xl text-slate-900 mb-6">Add well</h1>
+    <div className="max-w-3xl mx-auto px-4 py-8 animate-slide-up">
+      <div className="card p-6 md:p-7 space-y-6" style={{ backgroundColor: 'var(--dark-2)', borderColor: 'rgba(245, 189, 39, 0.2)' }}>
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em]" style={{ color: 'var(--text-secondary)' }}>Well Management</p>
+            <h1 className="font-display font-bold text-2xl md:text-3xl mt-1" style={{ color: 'var(--text-primary)' }}>
+              Add New Well
+            </h1>
+            <p className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
+              Create a new monitoring point with location, status, and optional photos.
+            </p>
+          </div>
+          <span className="badge-warning">Draft</span>
+        </div>
 
-      <form onSubmit={handleSubmit} className="card p-6 space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
         {error && (
-          <div className="p-3 rounded-xl bg-rose-50 text-rose-800 text-sm border border-rose-200">{error}</div>
+          <div className="error-box">{error}</div>
         )}
 
         <div>
@@ -102,11 +114,11 @@ export default function AddWell() {
           <MapPicker lat={form.lat} lng={form.lng} onChange={handleMapPick} height="200px" />
           <div className="grid grid-cols-2 gap-3 mt-3">
             <div>
-              <label className="text-xs text-slate-500 mb-0.5 block">Latitude</label>
+              <label className="label !text-xs mb-0.5">Latitude</label>
               <input type="text" name="lat" value={form.lat} onChange={handleChange} placeholder="13.7563" className="input-field text-sm" required />
             </div>
             <div>
-              <label className="text-xs text-slate-500 mb-0.5 block">Longitude</label>
+              <label className="label !text-xs mb-0.5">Longitude</label>
               <input type="text" name="lng" value={form.lng} onChange={handleChange} placeholder="100.5018" className="input-field text-sm" required />
             </div>
           </div>
@@ -119,9 +131,18 @@ export default function AddWell() {
             accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
             multiple
             onChange={handlePhotoChange}
-            className="w-full text-sm text-slate-600 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-ocean-50 file:text-ocean-700 file:font-medium hover:file:bg-ocean-100 file:transition-colors"
+            className="w-full rounded-xl border px-3 py-2.5 text-sm"
+            style={{
+              borderColor: 'rgba(151, 155, 163, 0.28)',
+              backgroundColor: 'rgba(16, 22, 36, 0.95)',
+              color: 'var(--text-secondary)',
+            }}
           />
-          {photos.length > 0 && <p className="text-xs text-slate-500 mt-1">{photos.length} selected</p>}
+          {photos.length > 0 && (
+            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+              {photos.length} selected
+            </p>
+          )}
         </div>
 
         <div>
@@ -133,7 +154,7 @@ export default function AddWell() {
           </select>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex flex-wrap gap-3 pt-2">
           <button type="submit" disabled={loading} className="btn-primary flex-1 disabled:opacity-60">
             {loading ? 'Creating…' : 'Create well'}
           </button>
@@ -141,7 +162,8 @@ export default function AddWell() {
             Cancel
           </button>
         </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }
