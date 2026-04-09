@@ -1,3 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-dark-bg text-gray-200 font-sans antialiased overflow-x-hidden;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-dark-card/60 backdrop-blur-md border border-dark-border/50 shadow-xl;
+  }
+  
+  .glass-button {
+    @apply bg-aqua/10 hover:bg-aqua/20 border border-aqua/30 text-aqua transition-all duration-300 backdrop-blur-sm shadow-[0_0_15px_rgba(0,247,255,0.1)] hover:shadow-[0_0_20px_rgba(0,247,255,0.3)];
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(0, 247, 255, 0.5);
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-dark-bg;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-dark-border rounded-full hover:bg-gray-600 transition-colors;
+}
