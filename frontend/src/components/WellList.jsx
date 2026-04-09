@@ -7,10 +7,10 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 
 const STATUS_OPTIONS = ['Good', 'Needs Repair', 'Contaminated', 'Dry'];
 const STATUS_STYLES = {
-  Good: 'bg-emerald-100 text-emerald-800 border-emerald-200',
-  'Needs Repair': 'bg-amber-100 text-amber-800 border-amber-200',
-  Contaminated: 'bg-rose-100 text-rose-800 border-rose-200',
-  Dry: 'bg-slate-100 text-slate-700 border-slate-200',
+  Good: 'badge badge-good',
+  'Needs Repair': 'badge badge-repair',
+  Contaminated: 'badge badge-bad',
+  Dry: 'badge badge-dry',
 };
 
 export default function WellList() {
@@ -88,32 +88,28 @@ export default function WellList() {
   const photoUrl = (url) => (url?.startsWith('http') ? url : `${API_URL}${url}`);
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8 animate-slide-up">
-        <h1 className="font-display font-bold text-2xl text-slate-900">Wells</h1>
-        <Link to="/wells/add" className="btn-primary shrink-0">
-          Add well
-        </Link>
+    <div style={{ padding: 4 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 16 }}>
+        <h1 className="home-title" style={{ marginBottom: 0 }}>Wells & Weather</h1>
+        <Link to="/wells/add" className="btn-primary">Add well</Link>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-50 text-rose-800 border border-rose-200 animate-fade-in">
-          {error}
-        </div>
-      )}
+      {error && <div className="error-box" style={{ marginBottom: 12 }}>{error}</div>}
 
-      <form onSubmit={onSearch} className="flex flex-wrap gap-3 mb-6 animate-slide-up" style={{ animationDelay: '0.05s' }}>
+      <form onSubmit={onSearch} style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 12 }}>
         <input
           type="text"
           placeholder="Search by name"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="input-field w-48"
+          className="input-field"
+          style={{ width: 240 }}
         />
         <select
           value={status}
           onChange={(e) => { setStatus(e.target.value); setPage(1); }}
-          className="input-field w-40"
+          className="input-field"
+          style={{ width: 170 }}
         >
           <option value="">All statuses</option>
           {STATUS_OPTIONS.map((s) => (
@@ -124,27 +120,27 @@ export default function WellList() {
       </form>
 
       {loading ? (
-        <div className="card p-12 text-center text-slate-500">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-2 border-ocean-500 border-t-transparent" />
-          <p className="mt-3">Loading wells…</p>
+        <div className="card" style={{ padding: 34, textAlign: 'center' }}>
+          <p className="muted">Loading wells…</p>
         </div>
       ) : wells.length === 0 ? (
-        <div className="card p-12 text-center text-slate-500 animate-fade-in">
-          No wells found. <Link to="/wells/add" className="text-ocean-600 font-medium hover:underline">Add one</Link>
+        <div className="card" style={{ padding: 34, textAlign: 'center' }}>
+          <span className="muted">No wells found. </span>
+          <Link to="/wells/add" style={{ color: 'var(--gold)', textDecoration: 'none', fontWeight: 600 }}>Add one</Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-slide-up">
-          <div className="lg:col-span-2">
-            <div className="card overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="w-full">
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 14 }}>
+          <div>
+            <div className="card">
+              <div className="table-wrap">
+                <table>
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50/80">
-                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Name</th>
-                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Location</th>
-                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Status</th>
-                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Last inspected</th>
-                      <th className="text-left p-4 text-xs font-semibold uppercase tracking-wider text-slate-500">Actions</th>
+                    <tr>
+                      <th>Name</th>
+                      <th>Location</th>
+                      <th>Status</th>
+                      <th>Last inspected</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -152,25 +148,16 @@ export default function WellList() {
                       <tr
                         key={w._id}
                         onClick={() => setSelectedWell(w)}
-                        className={`border-b border-slate-100 cursor-pointer transition-colors ${
-                          selectedWell?._id === w._id ? 'bg-ocean-50/70' : 'hover:bg-slate-50/80'
-                        }`}
+                        className={`row-hover ${selectedWell?._id === w._id ? 'row-active' : ''}`}
+                        style={{ cursor: 'pointer' }}
                       >
-                        <td className="p-4 font-medium text-slate-900">{w.name}</td>
-                        <td className="p-4 text-slate-600 text-sm">
-                          {w.location?.lat?.toFixed(4)}, {w.location?.lng?.toFixed(4)}
-                        </td>
-                        <td className="p-4">
-                          <span className={`inline-flex px-2.5 py-1 rounded-lg text-xs font-medium border ${STATUS_STYLES[w.status] || STATUS_STYLES.Dry}`}>
-                            {w.status}
-                          </span>
-                        </td>
-                        <td className="p-4 text-slate-600 text-sm">
-                          {w.lastInspected ? new Date(w.lastInspected).toLocaleDateString() : '—'}
-                        </td>
-                        <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                          <Link to={`/wells/${w._id}`} className="btn-ghost text-ocean-600 mr-2">Edit</Link>
-                          <button type="button" onClick={() => handleDelete(w._id, w.name)} className="btn-ghost text-coral-600 hover:bg-rose-50">
+                        <td style={{ fontWeight: 600 }}>{w.name}</td>
+                        <td className="muted">{w.location?.lat?.toFixed(4)}, {w.location?.lng?.toFixed(4)}</td>
+                        <td><span className={STATUS_STYLES[w.status] || STATUS_STYLES.Dry}>{w.status}</span></td>
+                        <td className="muted">{w.lastInspected ? new Date(w.lastInspected).toLocaleDateString() : '—'}</td>
+                        <td onClick={(e) => e.stopPropagation()} style={{ display: 'flex', gap: 6 }}>
+                          <Link to={`/wells/${w._id}`} className="btn-ghost">Edit</Link>
+                          <button type="button" onClick={() => handleDelete(w._id, w.name)} className="btn-ghost" style={{ color: '#ffb5b6' }}>
                             Delete
                           </button>
                         </td>
@@ -182,70 +169,61 @@ export default function WellList() {
             </div>
 
             {totalPages > 1 && (
-              <div className="flex items-center gap-3 mt-4">
-                <button
-                  disabled={page <= 1}
-                  onClick={() => setPage((p) => p - 1)}
-                  className="btn-ghost disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  Previous
-                </button>
-                <span className="text-sm text-slate-600">Page {page} of {totalPages}</span>
-                <button
-                  disabled={page >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="btn-ghost disabled:opacity-50 disabled:pointer-events-none"
-                >
-                  Next
-                </button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12 }}>
+                <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="btn-ghost" style={{ opacity: page <= 1 ? 0.4 : 1 }}>Previous</button>
+                <span className="muted">Page {page} of {totalPages}</span>
+                <button disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)} className="btn-ghost" style={{ opacity: page >= totalPages ? 0.4 : 1 }}>Next</button>
               </div>
             )}
           </div>
 
-          <div className="space-y-6">
-            <h2 className="font-display font-semibold text-slate-900">Details</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <h2 style={{ margin: 0, fontFamily: 'Outfit, system-ui, sans-serif' }}>Details</h2>
             {selectedWell ? (
               <>
-                <div className="card overflow-hidden p-0">
+                <div className="card" style={{ overflow: 'hidden' }}>
                   <MapPicker lat={selectedWell.location?.lat} lng={selectedWell.location?.lng} height="180px" />
                 </div>
+
                 {selectedWell.photos?.length > 0 && (
-                  <div className="card p-4">
-                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Photos</h3>
-                    <div className="flex gap-2 flex-wrap">
+                  <div className="card" style={{ padding: 12 }}>
+                    <h3 className="muted" style={{ margin: '0 0 8px 0' }}>Photos</h3>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {selectedWell.photos.map((url, i) => (
-                        <a key={i} href={photoUrl(url)} target="_blank" rel="noopener noreferrer" className="block rounded-lg overflow-hidden border border-slate-200 hover:border-ocean-300 transition-colors">
-                          <img src={photoUrl(url)} alt={`Well ${i + 1}`} className="h-16 w-16 object-cover" />
+                        <a key={i} href={photoUrl(url)} target="_blank" rel="noopener noreferrer" style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(255,255,255,0.14)' }}>
+                          <img src={photoUrl(url)} alt={`Well ${i + 1}`} style={{ height: 68, width: 68, objectFit: 'cover' }} />
                         </a>
                       ))}
                     </div>
                   </div>
                 )}
-                <div className="card p-4">
-                  <h3 className="text-sm font-semibold text-slate-700 mb-3">Weather</h3>
+
+                <div className="card" style={{ padding: 12 }}>
+                  <h3 className="muted" style={{ margin: '0 0 8px 0' }}>Weather</h3>
                   {weatherLoading && !weather ? (
-                    <p className="text-sm text-slate-500">Loading…</p>
+                    <p className="muted">Loading…</p>
                   ) : weather ? (
-                    <div className="text-sm text-slate-600 space-y-1.5">
-                      <p className="font-medium text-slate-800">{weather.wellName}</p>
-                      <p className="capitalize">{weather.summary?.weather || '—'}</p>
-                      <p>
+                    <div style={{ display: 'grid', gap: 4 }}>
+                      <p style={{ margin: 0, fontWeight: 600 }}>{weather.wellName}</p>
+                      <p className="muted" style={{ margin: 0, textTransform: 'capitalize' }}>{weather.summary?.weather || '—'}</p>
+                      <p style={{ margin: 0 }}>
                         {weather.summary?.temperature != null && `${Math.round(weather.summary.temperature)}°C`}
                         {weather.summary?.humidity != null && ` · ${weather.summary.humidity}% humidity`}
                       </p>
-                      <p>Rain: {weather.summary?.rainfallMm != null ? `${weather.summary.rainfallMm} mm` : '0 mm'}</p>
-                      <p className="capitalize">Trend: {weather.summary?.waterLevelTrend || '—'}</p>
+                      <p style={{ margin: 0 }}>Rain: {weather.summary?.rainfallMm != null ? `${weather.summary.rainfallMm} mm` : '0 mm'}</p>
+                      <p className="muted" style={{ margin: 0, textTransform: 'capitalize' }}>Trend: {weather.summary?.waterLevelTrend || '—'}</p>
                     </div>
                   ) : (
-                    <p className="text-sm text-slate-500">Weather unavailable.</p>
+                    <p className="muted">Weather unavailable.</p>
                   )}
                 </div>
-                <Link to={`/wells/${selectedWell._id}`} className="btn-secondary w-full justify-center">
+
+                <Link to={`/wells/${selectedWell._id}`} className="btn-secondary" style={{ width: '100%' }}>
                   Edit this well
                 </Link>
               </>
             ) : (
-              <p className="text-sm text-slate-500">Select a well to see details, photos, and weather.</p>
+              <p className="muted">Select a well to see details, photos, and weather.</p>
             )}
           </div>
         </div>
