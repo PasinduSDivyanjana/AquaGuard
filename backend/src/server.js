@@ -1,7 +1,22 @@
 import express from "express";
+import { connectDB } from "./config/db.js";
+import userRoute from "./routes/userRoute.js";
+import dotenv from "dotenv";
+import cors from "cors";
+
+dotenv.config();
+
+const PORT = process.env.PORT || 5001;
 
 const app = express();
 
-app.listen(5001, () => {
-  console.log("Server is running on port 5001");
+app.use(cors({ origin: "http://localhost:5173" })); //This middleware will allow cross-origin requests
+app.use(express.json()); //This middleware will parse the JSON body
+
+app.use("/api/user", userRoute);
+
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log("Server started in port", PORT);
+  });
 });
