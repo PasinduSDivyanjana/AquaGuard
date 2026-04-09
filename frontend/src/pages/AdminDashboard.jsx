@@ -41,6 +41,11 @@ const AdminDashboard = () => {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [settingsSubTab, setSettingsSubTab] = useState("details");
 
+  // USERS STATE
+  const [allUsers, setAllUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [usersLoading, setUsersLoading] = useState(false);
+
   // Form states for updating details (same as UserDashboard)
   const [updateForm, setUpdateForm] = useState({
     firstName: "",
@@ -57,24 +62,103 @@ const AdminDashboard = () => {
     confirmPassword: "",
   });
 
+  // FETCH USERS
+  const fetchUsers = async () => {
+    try {
+      setUsersLoading(true);
+      const res = await axiosInstance.get("/user");
+
+      const users = res.data.data || res.data;
+      setAllUsers(users);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch users");
+    } finally {
+      setUsersLoading(false);
+    }
+  };
+
+  // DELETE USER
+  const handleDelete = async (id) => {
+    if (!window.confirm("Delete this user?")) return;
+
+    try {
+      await axiosInstance.delete(`/user/${id}`);
+      toast.success("User deleted");
+      setAllUsers((prev) => prev.filter((u) => u._id !== id));
+      // eslint-disable-next-line no-unused-vars
+    } catch (err) {
+      toast.error("Delete failed");
+    }
+  };
+
+  // UPDATE USER ROLE
+  const handleRoleChange = async (id, newRole) => {
+    try {
+      await axiosInstance.put(`/user/${id}`, { role: newRole });
+      toast.success("Role updated successfully");
+      setAllUsers((prev) =>
+        prev.map((u) => (u._id === id ? { ...u, role: newRole } : u))
+      );
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to update role");
+    }
+  };
+
+  // FILTER USERS
+  const filteredUsers = allUsers.filter((user) =>
+    `${user.firstName || ""} ${user.lastName || ""} ${user.email}`
+      .toLowerCase()
+      .includes(search.toLowerCase())
+  );
+
   useEffect(() => {
-    // Get admin info from localStorage
+    // Get admin info from localStorage first (for immediate display)
     const user = JSON.parse(localStorage.getItem("user") || "{}");
     setAdminInfo(user);
 
-    // Populate update form with user data (same as UserDashboard)
-    if (user) {
-      setUpdateForm({
-        firstName: user.firstName || user.name || "",
-        lastName: user.lastName || "",
-        email: user.email || "",
-        mobile: user.mobile || "",
-        address: user.address || "",
-      });
-    }
+    // Fetch full profile from API to get all fields (mobile, address, etc.)
+    const fetchProfile = async () => {
+      try {
+        const res = await axiosInstance.get("/user/profile");
+        const profileData = res.data.data;
+        if (profileData) {
+          setAdminInfo(profileData);
+          localStorage.setItem("user", JSON.stringify(profileData));
+          setUpdateForm({
+            firstName: profileData.firstName || profileData.name || "",
+            lastName: profileData.lastName || "",
+            email: profileData.email || "",
+            mobile: profileData.mobile || "",
+            address: profileData.address || "",
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch profile:", err);
+        // Fall back to localStorage data
+        if (user) {
+          setUpdateForm({
+            firstName: user.firstName || user.name || "",
+            lastName: user.lastName || "",
+            email: user.email || "",
+            mobile: user.mobile || "",
+            address: user.address || "",
+          });
+        }
+      }
+    };
 
+    fetchProfile();
     fetchDashboardData();
   }, []);
+
+  // Fetch users when users nav is active
+  useEffect(() => {
+    if (activeNav === "users") {
+      fetchUsers();
+    }
+  }, [activeNav]);
 
   const fetchDashboardData = async () => {
     setLoading(true);
@@ -252,9 +336,8 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#0A0E19] to-[#101624]">
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-[#101624] border-r border-[#172431] transition-all duration-300 z-20 ${
-          sidebarOpen ? "w-64" : "w-20"
-        }`}
+        className={`fixed top-0 left-0 h-full bg-[#101624] border-r border-[#172431] transition-all duration-300 z-20 ${sidebarOpen ? "w-64" : "w-20"
+          }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -288,11 +371,10 @@ const AdminDashboard = () => {
           <nav className="flex-1 p-4 space-y-2">
             <button
               onClick={() => setActiveNav("dashboard")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeNav === "dashboard"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "dashboard"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
-              }`}
+                }`}
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
@@ -301,11 +383,10 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("users")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeNav === "users"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "users"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
-              }`}
+                }`}
             >
               <svg
                 className="w-5 h-5"
@@ -324,11 +405,10 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("wells")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeNav === "wells"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "wells"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
-              }`}
+                }`}
             >
               <svg
                 className="w-5 h-5"
@@ -347,11 +427,10 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("alerts")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeNav === "alerts"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "alerts"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
-              }`}
+                }`}
             >
               <svg
                 className="w-5 h-5"
@@ -370,11 +449,10 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("tasks")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeNav === "tasks"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "tasks"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
-              }`}
+                }`}
             >
               <svg
                 className="w-5 h-5"
@@ -393,11 +471,10 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("settings")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeNav === "settings"
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "settings"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
-              }`}
+                }`}
             >
               <svg
                 className="w-5 h-5"
@@ -449,9 +526,8 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main
-        className={`transition-all duration-300 ${
-          sidebarOpen ? "ml-64" : "ml-20"
-        }`}
+        className={`transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"
+          }`}
       >
         {/* Header */}
         <header className="bg-[#101624]/50 backdrop-blur-sm border-b border-[#172431] sticky top-0 z-10">
@@ -554,8 +630,8 @@ const AdminDashboard = () => {
                       trend={
                         stats.activeWells > 0
                           ? `+${Math.round(
-                              (stats.activeWells / stats.totalWells) * 100
-                            )}%`
+                            (stats.activeWells / stats.totalWells) * 100
+                          )}%`
                           : null
                       }
                     />
@@ -728,6 +804,109 @@ const AdminDashboard = () => {
             </>
           )}
 
+          {/* USERS MANAGEMENT SECTION */}
+          {activeNav === "users" && (
+            <div className="bg-[#101624] rounded-xl border border-[#172431]">
+              <div className="flex justify-between items-center p-6 border-b border-[#172431]">
+                <h2 className="text-2xl font-bold text-white">
+                  Users Management
+                </h2>
+
+                <input
+                  type="text"
+                  placeholder="Search users..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-colors w-64"
+                />
+              </div>
+
+              <div className="p-6">
+                {usersLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-[#F5BD27] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-[#9BA0A6]">Loading users...</p>
+                    </div>
+                  </div>
+                ) : filteredUsers.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-[#9BA0A6]">
+                      {search
+                        ? "No users found matching your search"
+                        : "No users found"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-[#172431] text-[#9BA0A6]">
+                          <th className="p-3 text-left">Name</th>
+                          <th className="p-3 text-left">Email</th>
+                          <th className="p-3 text-center">Mobile</th>
+                          <th className="p-3 text-center">Role</th>
+                          <th className="p-3 text-center">Actions</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        {filteredUsers.map((user) => (
+                          <tr
+                            key={user._id}
+                            className="border-b border-[#172431] hover:bg-[#172431]/40 transition-colors"
+                          >
+                            <td className="p-3 text-white">
+                              {user.firstName || user.name} {user.lastName}
+                            </td>
+
+                            <td className="p-3 text-[#9BA0A6]">{user.email}</td>
+
+                            <td className="p-3 text-center text-[#9BA0A6]">
+                              {user.mobile || "-"}
+                            </td>
+
+                            <td className="p-3 text-center">
+                              <select
+                                value={user.role || "User"}
+                                onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                                className="bg-[#0A0E19] border border-[#172431] text-[#F5BD27] text-xs font-medium px-2 py-1 rounded-lg focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-colors cursor-pointer appearance-none"
+                                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23F5BD27'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: "22px" }}
+                              >
+                                <option value="User">User</option>
+                                <option value="Admin">Admin</option>
+                                <option value="Villager">Villager</option>
+                                <option value="Reporter">Reporter</option>
+                              </select>
+                            </td>
+
+                            <td className="p-3 text-center">
+                              <div className="flex gap-2 justify-center">
+                                <button
+                                  onClick={() => navigate(`/user/${user._id}`)}
+                                  className="bg-[#178B96] hover:bg-[#178B96]/80 text-white px-3 py-1 rounded-lg text-xs transition-colors"
+                                >
+                                  View
+                                </button>
+
+                                <button
+                                  onClick={() => handleDelete(user._id)}
+                                  className="bg-[#CA6162] hover:bg-[#CA6162]/80 text-white px-3 py-1 rounded-lg text-xs transition-colors"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Settings Page - Updated with UserDashboard logic */}
           {activeNav === "settings" && (
             <div className="max-w-4xl mx-auto">
@@ -740,31 +919,29 @@ const AdminDashboard = () => {
                   </p>
                 </div>
 
-                {/* Settings Tabs - Same as UserDashboard */}
+                {/* Settings Tabs */}
                 <div className="flex border-b border-[#172431] bg-[#0A0E19]">
                   <button
                     onClick={() => setSettingsSubTab("details")}
-                    className={`px-6 py-3 text-center transition-colors ${
-                      settingsSubTab === "details"
+                    className={`px-6 py-3 text-center transition-colors ${settingsSubTab === "details"
                         ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
                         : "text-[#9BA0A6] hover:text-gray-300"
-                    }`}
+                      }`}
                   >
                     Change User Details
                   </button>
                   <button
                     onClick={() => setSettingsSubTab("password")}
-                    className={`px-6 py-3 text-center transition-colors ${
-                      settingsSubTab === "password"
+                    className={`px-6 py-3 text-center transition-colors ${settingsSubTab === "password"
                         ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
                         : "text-[#9BA0A6] hover:text-gray-300"
-                    }`}
+                      }`}
                   >
                     Change Password
                   </button>
                 </div>
 
-                {/* Settings Content - Same as UserDashboard */}
+                {/* Settings Content */}
                 <div className="p-6">
                   {settingsSubTab === "details" && (
                     <form onSubmit={handleUpdateDetails}>
@@ -844,7 +1021,6 @@ const AdminDashboard = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            // Reset form to current user data
                             if (adminInfo) {
                               setUpdateForm({
                                 firstName:
@@ -940,17 +1116,19 @@ const AdminDashboard = () => {
           )}
 
           {/* Placeholder for other nav items */}
-          {activeNav !== "dashboard" && activeNav !== "settings" && (
-            <div className="bg-[#101624] rounded-xl border border-[#172431] p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}{" "}
-                Management
-              </h2>
-              <p className="text-[#9BA0A6]">
-                Content for {activeNav} management will be displayed here.
-              </p>
-            </div>
-          )}
+          {activeNav !== "dashboard" &&
+            activeNav !== "settings" &&
+            activeNav !== "users" && (
+              <div className="bg-[#101624] rounded-xl border border-[#172431] p-6">
+                <h2 className="text-2xl font-bold text-white mb-4">
+                  {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}{" "}
+                  Management
+                </h2>
+                <p className="text-[#9BA0A6]">
+                  Content for {activeNav} management will be displayed here.
+                </p>
+              </div>
+            )}
         </div>
       </main>
 
