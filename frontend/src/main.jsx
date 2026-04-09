@@ -13,9 +13,15 @@ createRoot(document.getElementById('root')).render(
         position="top-right"
         toastOptions={{
           duration: 3000,
-          style: { borderRadius: '12px', padding: '14px 18px' },
-          success: { iconTheme: { primary: '#0d9488' } },
-          error: { iconTheme: { primary: '#e11d48' } },
+          style: {
+            borderRadius: '12px',
+            padding: '14px 18px',
+            background: '#101624',
+            color: '#FFFFFF',
+            border: '1px solid rgba(255,255,255,0.12)',
+          },
+          success: { iconTheme: { primary: '#4BDA7F' } },
+          error: { iconTheme: { primary: '#CA6162' } },
         }}
       />
     </BrowserRouter>

@@ -9,64 +9,78 @@ function App() {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen flex flex-col relative">
+    <div className="app-shell">
       <AppBackground />
-      <header className="sticky top-0 z-50 border-b border-ocean-200/60 bg-white/80 backdrop-blur-md shadow-sm">
-        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-          <Link
-            to="/"
-            className="font-display font-bold text-xl text-ocean-700 tracking-tight hover:text-ocean-800 transition-colors flex items-center gap-2"
-          >
-            <span className="text-2xl" aria-hidden>💧</span>
-            AquaGuard
-          </Link>
-          <nav className="flex items-center gap-1">
-            <Link
-              to="/"
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                location.pathname === '/' ? 'bg-ocean-100 text-ocean-700' : 'text-slate-600 hover:bg-ocean-50 hover:text-ocean-700'
-              }`}
-            >
-              Home
-            </Link>
-            <Link
-              to="/wells"
-              className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
-                location.pathname.startsWith('/wells') ? 'bg-ocean-100 text-ocean-700' : 'text-slate-600 hover:bg-ocean-50 hover:text-ocean-700'
-              }`}
-            >
-              Wells
-            </Link>
-          </nav>
-        </div>
-      </header>
 
-      <main className="flex-1 animate-fade-in">
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <div className="max-w-6xl mx-auto px-4 py-12 sm:py-16 text-center relative">
-                <HeroGraphic />
-                <div className="animate-slide-up max-w-2xl mx-auto">
-                  <h1 className="font-display font-bold text-4xl sm:text-5xl text-slate-900 mb-4">
-                    Rural water well monitoring
-                  </h1>
-                  <p className="text-lg text-slate-600 mb-10">
-                    Track wells, conditions, and weather in one place.
-                  </p>
-                  <Link to="/wells" className="btn-primary text-base px-8 py-3">
-                    View wells
-                  </Link>
+      <aside className="sidebar">
+        <div className="brand">
+          <span aria-hidden>💧</span>
+          <span>AquaGuard</span>
+        </div>
+
+        <nav>
+          <Link to="/" className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}>
+            Dashboard
+          </Link>
+          <Link to="/wells" className={`nav-link ${location.pathname.startsWith('/wells') ? 'active' : ''}`}>
+            Wells & Weather
+          </Link>
+          <Link to="/wells/add" className={`nav-link ${location.pathname === '/wells/add' ? 'active' : ''}`}>
+            Add Well
+          </Link>
+        </nav>
+
+        <div className="sidebar-footer">
+          <button type="button" className="btn-ghost" style={{ width: '100%' }}>
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      <section className="main-area">
+        <div className="topbar">
+          <input className="topbar-search" placeholder="Search wells, tasks, alerts..." />
+          <div className="system-badge">System Normal</div>
+        </div>
+
+        <main className="content-wrap">
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <div>
+                  <div style={{ marginBottom: 14 }}>
+                    <h1 className="home-title">Dashboard</h1>
+                    <p className="home-subtitle">Status Overview for AquaGuard Systems</p>
+                  </div>
+
+                  <div className="dashboard-grid" style={{ marginBottom: 14 }}>
+                    <div className="kpi-card">
+                      <div className="kpi-label">Active Tasks</div>
+                      <div className="kpi-value">4</div>
+                    </div>
+                    <div className="kpi-card">
+                      <div className="kpi-label">Unread Alerts</div>
+                      <div className="kpi-value">0</div>
+                    </div>
+                    <div className="kpi-card">
+                      <div className="kpi-label">Pending Auto-Tasks</div>
+                      <div className="kpi-value">0</div>
+                    </div>
+                  </div>
+
+                  <div className="card" style={{ padding: 18 }}>
+                    <HeroGraphic />
+                  </div>
                 </div>
-              </div>
-            }
-          />
-          <Route path="/wells" element={<WellList />} />
-          <Route path="/wells/add" element={<AddWell />} />
-          <Route path="/wells/:id" element={<EditWell />} />
-        </Routes>
-      </main>
+              }
+            />
+            <Route path="/wells" element={<WellList />} />
+            <Route path="/wells/add" element={<AddWell />} />
+            <Route path="/wells/:id" element={<EditWell />} />
+          </Routes>
+        </main>
+      </section>
     </div>
   );
 }
