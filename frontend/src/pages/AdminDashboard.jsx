@@ -54,6 +54,7 @@ const AdminDashboard = () => {
   const [wellPage, setWellPage] = useState(1);
   const [wellTotalPages, setWellTotalPages] = useState(1);
   const [wellTotal, setWellTotal] = useState(0);
+  const [selectedWell, setSelectedWell] = useState(null);
   const WELL_STATUS_OPTIONS = ["Good", "Needs Repair", "Contaminated", "Dry"];
   const WELL_STATUS_STYLES = {
     Good: { bg: "#4BDA7F", label: "Good" },
@@ -1238,7 +1239,15 @@ const AdminDashboard = () => {
                           const style = WELL_STATUS_STYLES[w.status] || WELL_STATUS_STYLES.Dry;
                           const owner = w.user;
                           return (
-                            <tr key={w._id} className="hover:bg-[#0A0E19] transition-colors">
+                            <tr
+                              key={w._id}
+                              onClick={() => setSelectedWell(w)}
+                              className={`cursor-pointer transition-all duration-200 ${
+                                selectedWell?._id === w._id
+                                  ? "bg-[#F5BD27]/5 border-l-4 border-l-[#F5BD27]"
+                                  : "hover:bg-[#0A0E19]"
+                              }`}
+                            >
                               <td className="px-5 py-4">
                                 <div className="font-semibold text-white">{w.name}</div>
                                 <div className="text-xs text-[#6B7280] mt-0.5 font-mono">{w._id.slice(-8)}</div>
@@ -1304,6 +1313,151 @@ const AdminDashboard = () => {
               )}
             </div>
           )}
+
+          {/* WELL DETAIL SLIDE-OVER MODAL */}
+          {selectedWell && (() => {
+            const w = selectedWell;
+            const style = WELL_STATUS_STYLES[w.status] || WELL_STATUS_STYLES.Dry;
+            const owner = w.user;
+            const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+            const photoUrl = (url) => url?.startsWith("http") ? url : `${API_URL}${url}`;
+            return (
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                  onClick={() => setSelectedWell(null)}
+                />
+                {/* Panel */}
+                <div className="fixed top-0 right-0 h-full w-full max-w-md bg-[#101624] border-l border-[#172431] z-50 flex flex-col shadow-2xl overflow-hidden animate-slide-in-right"
+                  style={{ animation: "slideInRight 0.25s ease-out" }}
+                >
+                  {/* Header */}
+                  <div className="flex items-start justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-1">Well Details</p>
+                      <h2 className="text-xl font-bold text-white truncate">{w.name}</h2>
+                      <p className="text-xs text-[#6B7280] font-mono mt-0.5">ID: {w._id}</p>
+                    </div>
+                    <button
+                      onClick={() => setSelectedWell(null)}
+                      className="ml-4 p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors flex-shrink-0"
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  {/* Scrollable body */}
+                  <div className="flex-1 overflow-y-auto p-6 space-y-5">
+
+                    {/* Status badge */}
+                    <div className="flex items-center gap-3">
+                      <span
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
+                        style={{ backgroundColor: `${style.bg}20`, color: style.bg, border: `1px solid ${style.bg}40` }}
+                      >
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: style.bg }} />
+                        {w.status}
+                      </span>
+                    </div>
+
+                    {/* Owner */}
+                    <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                      <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Owner</p>
+                      {owner ? (
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-sm">
+                            {owner.firstName?.charAt(0) || "?"}
+                          </div>
+                          <div>
+                            <p className="text-white font-medium">{owner.firstName} {owner.lastName}</p>
+                            <p className="text-xs text-[#6B7280]">{owner.email}</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[#6B7280] text-sm">Unknown owner</p>
+                      )}
+                    </div>
+
+                    {/* Details grid */}
+                    <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4 space-y-3">
+                      <p className="text-xs text-[#9BA0A6] uppercase tracking-wider">Well Information</p>
+                      {[
+                        {
+                          label: "Latitude",
+                          value: w.location?.lat != null ? `${w.location.lat.toFixed(6)}°` : "—",
+                        },
+                        {
+                          label: "Longitude",
+                          value: w.location?.lng != null ? `${w.location.lng.toFixed(6)}°` : "—",
+                        },
+                        {
+                          label: "Photos",
+                          value: `${w.photos?.length || 0} photo${(w.photos?.length || 0) !== 1 ? "s" : ""}`,
+                        },
+                        {
+                          label: "Last Inspected",
+                          value: w.lastInspected
+                            ? new Date(w.lastInspected).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+                            : "Never inspected",
+                        },
+                        {
+                          label: "Created",
+                          value: new Date(w.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+                        },
+                        {
+                          label: "Last Updated",
+                          value: new Date(w.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+                        },
+                      ].map(({ label, value }) => (
+                        <div key={label} className="flex items-start justify-between gap-4 py-2 border-b border-[#172431] last:border-0">
+                          <span className="text-sm text-[#9BA0A6] flex-shrink-0">{label}</span>
+                          <span className="text-sm text-white text-right font-mono">{value}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Photos gallery */}
+                    {w.photos?.length > 0 && (
+                      <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                        <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Photos ({w.photos.length})</p>
+                        <div className="grid grid-cols-3 gap-2">
+                          {w.photos.map((photo, i) => (
+                            <a
+                              key={i}
+                              href={photoUrl(photo)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="relative group overflow-hidden rounded-lg border border-[#172431] hover:border-[#F5BD27] transition-all duration-300"
+                            >
+                              <img
+                                src={photoUrl(photo)}
+                                alt={`Well ${i + 1}`}
+                                className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                </svg>
+                              </div>
+                            </a>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <style>{`
+                  @keyframes slideInRight {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to   { transform: translateX(0);    opacity: 1; }
+                  }
+                `}</style>
+              </>
+            );
+          })()}
 
           {/* Placeholder for other nav items */}
           {activeNav !== "dashboard" &&
