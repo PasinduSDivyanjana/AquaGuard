@@ -36,8 +36,8 @@ const severityCalculator = ({
   if (userRole === "Villager") severity += 1;
 
   // 5️⃣ Well operational status
-  if (wellStatus === "out of service") severity += 2;
-  if (wellStatus === "needs repair") severity += 1;
+  if (wellStatus === "Dry") severity += 2;
+  if (wellStatus === "Needs Repair") severity += 1;
 
   // 6️⃣ Clamp severity between 1–10
   return Math.min(Math.max(severity, 1), 10);

@@ -58,7 +58,7 @@ export const getAllReportsService = async (query) => {
 
   return await Report.find(filter)
     .populate("reportedBy", "firstName lastName email")
-    .populate("wellId", "name village status")
+    .populate("wellId", "name location status")
     .sort({ createdAt: -1 })
     .skip(skip)
     .limit(limit);

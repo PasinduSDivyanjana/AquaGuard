@@ -30,7 +30,7 @@ export const createReport = async (req, res) => {
 
     const populatedReport = await report.populate([
       { path: "reportedBy", select: "firstName lastName email" },
-      { path: "wellId", select: "name village status" }
+      { path: "wellId", select: "name location status" }
     ]);
 
     res.status(201).json({
@@ -73,7 +73,7 @@ export const getReportById = async (req, res) => {
   try {
     const report = await Report.findById(req.params.id)
       .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village status");
+      .populate("wellId", "name location status");
 
     if (!report) {
       return res.status(404).json({
@@ -135,7 +135,7 @@ export const updateReport = async (req, res) => {
 
     const populatedReport = await report.populate([
       { path: "reportedBy", select: "firstName lastName email" },
-      { path: "wellId", select: "name village status" }
+      { path: "wellId", select: "name location status" }
     ]);
 
     res.status(200).json({
