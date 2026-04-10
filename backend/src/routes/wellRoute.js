@@ -49,7 +49,7 @@ router.get("/admin/all", restrictTo("admin", "Admin"), getAllWellsAdmin);
  */
 router.get("/:id", wellIdValidator, getWellById);
 router.put("/:id", updateWellValidator, updateWell);
-router.delete("/:id", wellIdValidator, restrictTo("admin"), deleteWell);
+router.delete("/:id", wellIdValidator, deleteWell);
 
 /**
  * @section Additional Well Data
