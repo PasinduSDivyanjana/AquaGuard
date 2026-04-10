@@ -51,6 +51,10 @@ app.use("/api/predictive", predictiveRoutes);
 app.use("/api/user", userRoute);
 app.use("/api/wells", wellRoute);
 
+// Error handling — must be last
+app.use(notFound);
+app.use(errorHandler);
+
 connectDB().then(() => {
   app.listen(PORT, () => {
     console.log("Server started in port", PORT);

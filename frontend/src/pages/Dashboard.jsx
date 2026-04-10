@@ -1,164 +1,199 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import HeroGraphic from '../components/HeroGraphic';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router";
+import { fetchReports } from "../api/reportApi";
+import StatsCard from "../components/StatsCard";
+import SeverityBadge from "../components/SeverityBadge";
+import StatusChip from "../components/StatusChip";
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
-
-function KpiValue({ value, loading }) {
-  if (loading) {
-    return <div className="kpi-value kpi-value--loading" aria-hidden />;
-  }
-  return <div className="kpi-value">{value ?? '—'}</div>;
-}
+const CONDITION_ICONS = {
+  DRY: "🏜️",
+  CONTAMINATED: "☣️",
+  DAMAGED: "🔨",
+  LOW_WATER: "💧",
+};
 
 export default function Dashboard() {
-  const [stats, setStats] = useState({
-    total: null,
-    needsRepair: null,
-    contaminated: null,
-    loading: true,
-  });
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterCondition, setFilterCondition] = useState("");
+  const navigate = useNavigate();
+
+  const loadReports = async () => {
+    setLoading(true);
+    try {
+      const query = {};
+      if (filterStatus) query.status = filterStatus;
+      if (filterCondition) query.conditionType = filterCondition;
+      const res = await fetchReports(query);
+      setReports(res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const [resAll, resRepair, resBad] = await Promise.all([
-          fetch(`${API_URL}/api/wells?page=1&limit=1`),
-          fetch(`${API_URL}/api/wells?page=1&limit=1&status=${encodeURIComponent('Needs Repair')}`),
-          fetch(`${API_URL}/api/wells?page=1&limit=1&status=${encodeURIComponent('Contaminated')}`),
-        ]);
-        const [dAll, dRepair, dBad] = await Promise.all([
-          resAll.json().catch(() => ({})),
-          resRepair.json().catch(() => ({})),
-          resBad.json().catch(() => ({})),
-        ]);
-        if (cancelled) return;
-        setStats({
-          total: dAll.data?.total ?? null,
-          needsRepair: dRepair.data?.total ?? null,
-          contaminated: dBad.data?.total ?? null,
-          loading: false,
-        });
-      } catch {
-        if (!cancelled) setStats((s) => ({ ...s, loading: false }));
-      }
-    };
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    loadReports();
+  }, [filterStatus, filterCondition]);
 
-  const today = new Intl.DateTimeFormat(undefined, {
-    weekday: 'long',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }).format(new Date());
+  const totalReports = reports.length;
+  const pendingCount = reports.filter((r) => r.status === "pending").length;
+  const verifiedCount = reports.filter((r) => r.status === "verified").length;
+  const rejectedCount = reports.filter((r) => r.status === "rejected").length;
 
-  const { loading, total, needsRepair, contaminated } = stats;
+  const formatDate = (dateStr) => {
+    return new Date(dateStr).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
-    <div className="dashboard-page animate-slide-up">
-      <header className="dashboard-header">
-        <div>
-          <p className="dashboard-eyebrow">Overview</p>
-          <h1 className="home-title" style={{ marginBottom: 6 }}>
-            Dashboard
-          </h1>
-          <p className="home-subtitle" style={{ marginBottom: 0 }}>
-            Smart well monitoring — status at a glance
-          </p>
-        </div>
-        <div className="dashboard-header-aside">
-          <span className="dashboard-date">{today}</span>
-          <div className="dashboard-quick-actions">
-            <Link to="/wells" className="btn-secondary">
-              View wells
-            </Link>
-            <Link to="/wells/add" className="btn-primary">
-              Add well
-            </Link>
-          </div>
-        </div>
-      </header>
-
-      <div className="dashboard-grid dashboard-kpi-strip">
-        <div className="kpi-card kpi-card--teal">
-          <div className="kpi-card-top">
-            <span className="kpi-icon" aria-hidden>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-              </svg>
-            </span>
-            <span className="kpi-label">Monitored wells</span>
-          </div>
-          <KpiValue value={total} loading={loading} />
-          <p className="kpi-hint">Registered in AquaGuard</p>
-        </div>
-
-        <div className="kpi-card kpi-card--gold">
-          <div className="kpi-card-top">
-            <span className="kpi-icon" aria-hidden>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-                <line x1="12" y1="9" x2="12" y2="13" />
-                <line x1="12" y1="17" x2="12.01" y2="17" />
-              </svg>
-            </span>
-            <span className="kpi-label">Needs repair</span>
-          </div>
-          <KpiValue value={needsRepair} loading={loading} />
-          <p className="kpi-hint">Status: Needs Repair</p>
-        </div>
-
-        <div className="kpi-card kpi-card--coral">
-          <div className="kpi-card-top">
-            <span className="kpi-icon" aria-hidden>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </span>
-            <span className="kpi-label">Contamination flags</span>
-          </div>
-          <KpiValue value={contaminated} loading={loading} />
-          <p className="kpi-hint">Status: Contaminated</p>
-        </div>
+    <div>
+      <div className="page-header animate-in">
+        <h2>Dashboard</h2>
+        <p>Monitor and manage water well condition reports</p>
       </div>
 
-      <div className="dashboard-hero-grid">
-        <div className="card dashboard-hero-visual">
-          <div className="dashboard-hero-visual-inner">
-            <p className="dashboard-hero-tag">Live network</p>
-            <HeroGraphic />
-            <p className="dashboard-hero-caption muted">
-              Wells are tracked with map coordinates, photos, and weather context for faster decisions.
-            </p>
-          </div>
-        </div>
-
-        <div className="card dashboard-hero-copy">
-          <h2 className="dashboard-hero-title">Keep every well visible</h2>
-          <p className="muted" style={{ margin: '0 0 14px', lineHeight: 1.55 }}>
-            Review the full directory, inspect conditions on the map, and update records when field work is done.
-            Weather summaries help you interpret water levels alongside rainfall and trends.
-          </p>
-          <ul className="dashboard-bullet-list">
-            <li>Search and filter by status</li>
-            <li>Click a row for map, photos, and forecast</li>
-            <li>Edit details or add new sites in a few steps</li>
-          </ul>
-          <div className="dashboard-hero-footer">
-            <Link to="/wells" className="btn-primary">
-              Open Wells &amp; Weather
-            </Link>
-            <span className="subtle dashboard-hero-footnote">CRUD demo · Smart well monitoring</span>
-          </div>
-        </div>
+      {/* Stats */}
+      <div className="stats-row">
+        <StatsCard
+          icon="📋"
+          label="Total Reports"
+          value={totalReports}
+          accentColor="#178B96"
+          animClass="animate-in animate-in-1"
+        />
+        <StatsCard
+          icon="⏳"
+          label="Pending"
+          value={pendingCount}
+          accentColor="#F5BD27"
+          animClass="animate-in animate-in-2"
+        />
+        <StatsCard
+          icon="✅"
+          label="Verified"
+          value={verifiedCount}
+          accentColor="#4BDA7F"
+          animClass="animate-in animate-in-3"
+        />
+        <StatsCard
+          icon="❌"
+          label="Rejected"
+          value={rejectedCount}
+          accentColor="#CA6162"
+          animClass="animate-in animate-in-4"
+        />
       </div>
+
+      {/* Filters */}
+      <div className="filters-bar animate-in">
+        <span className="filter-label">Filter by:</span>
+        <select
+          className="filter-select"
+          value={filterStatus}
+          onChange={(e) => setFilterStatus(e.target.value)}
+          id="filter-status"
+        >
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="verified">Verified</option>
+          <option value="rejected">Rejected</option>
+        </select>
+        <select
+          className="filter-select"
+          value={filterCondition}
+          onChange={(e) => setFilterCondition(e.target.value)}
+          id="filter-condition"
+        >
+          <option value="">All Conditions</option>
+          <option value="DRY">Dry</option>
+          <option value="CONTAMINATED">Contaminated</option>
+          <option value="DAMAGED">Damaged</option>
+          <option value="LOW_WATER">Low Water</option>
+        </select>
+      </div>
+
+      {/* Reports Table */}
+      {loading ? (
+        <div className="loading-container">
+          <div className="loading-spinner" />
+        </div>
+      ) : reports.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">📭</div>
+          <h3>No reports found</h3>
+          <p>Try adjusting your filters or create a new report.</p>
+        </div>
+      ) : (
+        <div className="reports-table-container animate-in">
+          <table className="reports-table">
+            <thead>
+              <tr>
+                <th>Well</th>
+                <th>Condition</th>
+                <th>Severity</th>
+                <th>Reported By</th>
+                <th>Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {reports.map((report) => (
+                <tr
+                  key={report._id}
+                  onClick={() => navigate(`/report/${report._id}`)}
+                >
+                  <td>
+                    <div className="table-well-info">
+                      <span className="table-well-name">
+                        {report.wellId?.name || "Unknown Well"}
+                      </span>
+                      {report.wellId?.location && (
+                        <span className="table-well-coords">
+                          {report.wellId.location.lat?.toFixed(4)},{" "}
+                          {report.wellId.location.lng?.toFixed(4)}
+                        </span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span
+                      className={`condition-badge condition-badge--${report.conditionType}`}
+                    >
+                      {CONDITION_ICONS[report.conditionType]}{" "}
+                      {report.conditionType.replace("_", " ")}
+                    </span>
+                  </td>
+                  <td>
+                    <SeverityBadge score={report.severityScore} />
+                  </td>
+                  <td>
+                    <span className="table-reporter">
+                      {report.reportedBy?.firstName}{" "}
+                      {report.reportedBy?.lastName}
+                    </span>
+                  </td>
+                  <td>
+                    <StatusChip status={report.status} />
+                  </td>
+                  <td>
+                    <span className="table-date">
+                      {formatDate(report.createdAt)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }

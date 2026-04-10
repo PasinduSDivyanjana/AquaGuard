@@ -14,6 +14,7 @@ import CreateReport from "./pages/CreateReport";
 import ReportDetail from "./pages/ReportDetail";
 import AddWell from "./components/AddWell";
 import EditWell from "./pages/EditWell";
+import Dashboard from "./pages/Dashboard";
 
 function App() {
   return (
@@ -47,6 +48,7 @@ function App() {
         <Route path="/wells/:id" element={<EditWell />} />
         <Route path="/create" element={<CreateReport />} />
         <Route path="/report/:id" element={<ReportDetail />} />
+        <Route path="/dashboard" element={<Dashboard />} />
       </Routes>
     </div>
   );
