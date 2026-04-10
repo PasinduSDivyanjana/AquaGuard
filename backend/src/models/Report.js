@@ -1,3 +1,5 @@
+import mongoose from "mongoose";
+
 const reportSchema = new mongoose.Schema({
   wellId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -35,3 +37,9 @@ const reportSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 reportSchema.index({ wellId: 1, createdAt: -1 });
+
+// 🔥 THIS LINE IS MISSING OR WRONG IN YOUR FILE
+const Report = mongoose.model("Report", reportSchema);
+
+// ✅ EXPORT AFTER DECLARATION
+export default Report;
