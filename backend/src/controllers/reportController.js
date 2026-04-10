@@ -2,30 +2,48 @@ import severityCalculator from "../utils/severityCalculator.js";
 import User from "../models/User.js";
 import Well from "../models/Well.js";
 import Report from "../models/Report.js";
-import { createReportService } from "../services/report.service.js";
+import {
+  createReportService,
+  getAllReportsService,
+  verifyReportService,
+  deleteReportService
+} from "../services/report.service.js";
 
 /**
  * CREATE REPORT
  */
 export const createReport = async (req, res) => {
   try {
-    const report = await createReportService(req.body);
+    const { wellId, conditionType } = req.body;
+
+    if (!wellId || !conditionType) {
+      return res.status(400).json({
+        success: false,
+        message: "Missing required fields"
+      });
+    }
+
+    const report = await createReportService({
+      ...req.body,
+      reportedBy: req.user?.id || req.body.reportedBy
+    });
 
     const populatedReport = await report.populate([
       { path: "reportedBy", select: "firstName lastName email" },
-      { path: "wellId", select: "name village status" },
+      { path: "wellId", select: "name village status" }
     ]);
 
     res.status(201).json({
       success: true,
       message: "Report created successfully",
-      data: populatedReport,
+      data: populatedReport
     });
+
   } catch (error) {
+    console.error(error);
     res.status(500).json({
       success: false,
-      message: "Error creating report",
-      error: error.message,
+      message: error.message
     });
   }
 };
@@ -34,25 +52,20 @@ export const createReport = async (req, res) => {
  */
 export const getAllReports = async (req, res) => {
   try {
-    const reports = await Report.find()
-      .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village status")
-      .sort({ createdAt: -1 });
+    const reports = await getAllReportsService(req.query);
 
     res.status(200).json({
       success: true,
-      count: reports.length,
-      data: reports,
+      data: reports
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error fetching reports",
-      error: error.message,
+      message: error.message
     });
   }
 };
-
 /**
  * GET REPORT BY ID
  */
@@ -140,24 +153,35 @@ export const updateReport = async (req, res) => {
  */
 export const deleteReport = async (req, res) => {
   try {
-    const deletedReport = await Report.findByIdAndDelete(req.params.id);
-
-    if (!deletedReport) {
-      return res.status(404).json({
-        success: false,
-        message: "Report not found",
-      });
-    }
+    await deleteReportService(req.params.id);
 
     res.status(200).json({
       success: true,
-      message: "Report deleted successfully",
+      message: "Report deleted successfully"
     });
+
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error deleting report",
-      error: error.message,
+      message: error.message
+    });
+  }
+};
+
+export const updateReportStatus = async (req, res) => {
+  try {
+    const report = await verifyReportService(req.params.id, req.body.status);
+
+    res.status(200).json({
+      success: true,
+      message: "Status updated",
+      data: report
+    });
+
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message
     });
   }
 };
