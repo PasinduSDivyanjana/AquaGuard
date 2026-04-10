@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { createReport } from "../api/reportApi";
@@ -6,6 +6,12 @@ import { createReport } from "../api/reportApi";
 export default function CreateReport() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [imageMode, setImageMode] = useState("capture"); // "capture" or "url"
+  const fileInputRef = useRef(null);
+  const cameraInputRef = useRef(null);
+
   const [form, setForm] = useState({
     wellId: "",
     reportedBy: "",
@@ -16,6 +22,27 @@ export default function CreateReport() {
 
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be under 5MB");
+      return;
+    }
+
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+    setForm({ ...form, imageURL: "" });
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
   };
 
   const handleSubmit = async (e) => {
@@ -34,7 +61,8 @@ export default function CreateReport() {
         conditionType: form.conditionType,
       };
       if (form.description.trim()) payload.description = form.description;
-      if (form.imageURL.trim()) payload.imageURL = form.imageURL;
+      if (imageFile) payload.image = imageFile;
+      else if (form.imageURL.trim()) payload.imageURL = form.imageURL;
 
       await createReport(payload);
       toast.success("Report created successfully!");
@@ -122,19 +150,106 @@ export default function CreateReport() {
             />
           </div>
 
+          {/* Image Section */}
           <div className="form-group">
-            <label className="form-label" htmlFor="imageURL">
-              Image URL
-            </label>
-            <input
-              id="imageURL"
-              name="imageURL"
-              type="url"
-              className="form-input"
-              placeholder="https://example.com/image.jpg"
-              value={form.imageURL}
-              onChange={handleChange}
-            />
+            <label className="form-label">Evidence Image</label>
+
+            {/* Mode Toggle */}
+            <div className="image-mode-toggle">
+              <button
+                type="button"
+                className={`mode-btn ${imageMode === "capture" ? "mode-btn--active" : ""}`}
+                onClick={() => setImageMode("capture")}
+              >
+                📷 Capture / Upload
+              </button>
+              <button
+                type="button"
+                className={`mode-btn ${imageMode === "url" ? "mode-btn--active" : ""}`}
+                onClick={() => setImageMode("url")}
+              >
+                🔗 Paste URL
+              </button>
+            </div>
+
+            {imageMode === "capture" ? (
+              <>
+                {/* Image Preview */}
+                {imagePreview && (
+                  <div className="image-preview-container">
+                    <img src={imagePreview} alt="Preview" className="image-preview" />
+                    <button
+                      type="button"
+                      className="image-remove-btn"
+                      onClick={removeImage}
+                      title="Remove image"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                )}
+
+                {/* Capture / Upload Buttons */}
+                {!imagePreview && (
+                  <div className="image-capture-area">
+                    <div className="capture-icon">📷</div>
+                    <p>Take a photo or choose from gallery</p>
+
+                    <div className="capture-buttons">
+                      {/* Camera button — opens camera on mobile */}
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => cameraInputRef.current?.click()}
+                      >
+                        📸 Take Photo
+                      </button>
+
+                      {/* File picker */}
+                      <button
+                        type="button"
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        🖼️ Choose File
+                      </button>
+                    </div>
+
+                    {/* Hidden inputs */}
+                    <input
+                      ref={cameraInputRef}
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      onChange={handleFileSelect}
+                      style={{ display: "none" }}
+                    />
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      onChange={handleFileSelect}
+                      style={{ display: "none" }}
+                    />
+                  </div>
+                )}
+              </>
+            ) : (
+              /* URL Input */
+              <input
+                id="imageURL"
+                name="imageURL"
+                type="url"
+                className="form-input"
+                placeholder="https://example.com/image.jpg"
+                value={form.imageURL}
+                onChange={handleChange}
+              />
+            )}
+
+            <p className="image-hint">
+              Supported: JPEG, PNG, WebP, GIF — Max 5MB
+            </p>
           </div>
 
           <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>

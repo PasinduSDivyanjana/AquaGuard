@@ -20,10 +20,17 @@ export const fetchReportById = async (id) => {
 };
 
 export const createReport = async (data) => {
+  const formData = new FormData();
+  formData.append("wellId", data.wellId);
+  formData.append("reportedBy", data.reportedBy);
+  formData.append("conditionType", data.conditionType);
+  if (data.description) formData.append("description", data.description);
+  if (data.image) formData.append("image", data.image);
+  if (data.imageURL) formData.append("imageURL", data.imageURL);
+
   const res = await fetch(API_BASE, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: formData,
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.message || "Failed to create report");

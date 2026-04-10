@@ -906,3 +906,114 @@ ul, ol {
     flex-direction: column;
   }
 }
+
+/* ========== Image Capture ========== */
+.image-mode-toggle {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.mode-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: var(--dark-3);
+  color: var(--text-secondary);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  transition: all 0.2s var(--ease-out);
+}
+
+.mode-btn:hover {
+  background: var(--dark-4);
+  color: var(--text-primary);
+}
+
+.mode-btn--active {
+  background: rgba(245, 189, 39, 0.12);
+  color: var(--gold);
+  border-color: rgba(245, 189, 39, 0.3);
+}
+
+.image-capture-area {
+  border: 2px dashed rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 36px 20px;
+  text-align: center;
+  transition: all 0.25s var(--ease-out);
+  background: rgba(255, 255, 255, 0.01);
+}
+
+.image-capture-area:hover {
+  border-color: rgba(245, 189, 39, 0.2);
+  background: rgba(245, 189, 39, 0.02);
+}
+
+.capture-icon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.image-capture-area p {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+}
+
+.capture-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.image-preview-container {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 12px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.image-preview {
+  max-width: 100%;
+  max-height: 260px;
+  display: block;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+}
+
+.image-remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(10, 14, 25, 0.8);
+  color: var(--coral);
+  border: 1px solid rgba(202, 97, 98, 0.3);
+  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(8px);
+}
+
+.image-remove-btn:hover {
+  background: var(--coral);
+  color: white;
+  transform: scale(1.1);
+}
+
+.image-hint {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin-top: 8px;
+}

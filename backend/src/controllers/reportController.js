@@ -2,6 +2,7 @@ import severityCalculator from "../utils/severityCalculator.js";
 import User from "../models/User.js";
 import Well from "../models/Well.js";
 import Report from "../models/Report.js";
+import cloudinary from "../config/cloudinary.js";
 import {
   createReportService,
   getAllReportsService,
@@ -23,9 +24,26 @@ export const createReport = async (req, res) => {
       });
     }
 
+    // Upload image to Cloudinary if a file was provided
+    let imageURL = req.body.imageURL || undefined;
+    if (req.file) {
+      const result = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder: "aquaguard/reports", resource_type: "image" },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+      imageURL = result.secure_url;
+    }
+
     const report = await createReportService({
       ...req.body,
-      reportedBy: req.user?.id || req.body.reportedBy
+      reportedBy: req.user?.id || req.body.reportedBy,
+      imageURL
     });
 
     const populatedReport = await report.populate([

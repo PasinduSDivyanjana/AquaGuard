@@ -1,4 +1,5 @@
 import express from "express";
+import upload from "../config/upload.js";
 import {
   createReport,
   getAllReports,
@@ -9,7 +10,7 @@ import {
 
 const router = express.Router();
 
-router.post("/", createReport);
+router.post("/", upload.single("image"), createReport);
 
 router.get("/", getAllReports);
 
