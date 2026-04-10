@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import HeroGraphic from './HeroGraphic';
+import HeroGraphic from '../components/HeroGraphic';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 

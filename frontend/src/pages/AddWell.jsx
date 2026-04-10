@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import MapPicker from './MapPicker';
+import MapPicker from '../components/MapPicker';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
 const STATUS_OPTIONS = ['Good', 'Needs Repair', 'Contaminated', 'Dry'];

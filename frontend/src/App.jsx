@@ -1,9 +1,9 @@
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import WellList from './components/WellList';
-import AddWell from './components/AddWell';
-import EditWell from './components/EditWell';
+import WellList from './pages/WellList';
+import AddWell from './pages/AddWell';
+import EditWell from './pages/EditWell';
 import AppBackground from './components/AppBackground';
-import Dashboard from './components/Dashboard';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   const location = useLocation();
