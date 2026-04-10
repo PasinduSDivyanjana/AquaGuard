@@ -5,11 +5,15 @@ import Register from "./pages/Register";
 import UserDashboard from "./pages/UserDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminDashboard from "./pages/AdminDashboard";
-import { Dashboard } from './pages/Dashboard';
+import { Dashboard } from './pages/Dashboard_Hamsiga';
 import { TasksList } from './pages/TasksList';
 import { AlertsManagement } from './pages/AlertsManagement';
 import { AutoTasksApproval } from './pages/AutoTasksApproval';
 import { WellsAndWeather } from './pages/WellsAndWeather';
+import WellList from './pages/WellList';
+import AddWell from './pages/AddWell';
+import EditWell from './pages/EditWell';
+import Dashboard from './pages/Dashboard';
 
 function App() {
   return (
@@ -39,6 +43,10 @@ function App() {
         <Route path="/auto-tasks" element={<AutoTasksApproval />} />
         <Route path="/wells" element={<WellsAndWeather />} />
         <Route path="/dahboard" element={<Dashboard />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/wells" element={<WellList />} />
+        <Route path="/wells/add" element={<AddWell />} />
+        <Route path="/wells/:id" element={<EditWell />} />
       </Routes>
     </div>
   );

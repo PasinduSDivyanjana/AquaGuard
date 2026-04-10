@@ -1,28 +1,72 @@
-import axios from "axios";
-import WeatherCache from "../models/WeatherCache.js";
+import { env } from '../config/env.js';
+import WellModel from '../models/Well.js';
 
-export const fetchWeather = async (lat, lon, wellId) => {
-  const cache = await WeatherCache.findOne({ well: wellId });
+const buildWeatherUrl = (lat, lng) => {
+  const base = env.OPENWEATHER_BASE_URL.replace(/\/$/, '');
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lng),
+    units: 'metric',
+    appid: env.OPENWEATHER_API_KEY || '',
+  });
+  return `${base}/weather?${params.toString()}`;
+};
 
-  if (cache && Date.now() - cache.fetchedAt < 3600000) {
-    return cache;
+export const getWeatherForWell = async (wellId) => {
+  if (!env.OPENWEATHER_API_KEY) {
+    const error = new Error('OpenWeather API key is not configured');
+    error.statusCode = 500;
+    throw error;
   }
 
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${process.env.OPENWEATHER_API_KEY}&units=metric`;
+  const well = await WellModel.findById(wellId).lean();
+  if (!well) {
+    const notFound = new Error('Well not found');
+    notFound.statusCode = 404;
+    throw notFound;
+  }
 
-  const { data } = await axios.get(url);
+  const { lat, lng } = well.location || {};
+  if (lat == null || lng == null) {
+    const bad = new Error('Well does not have valid coordinates');
+    bad.statusCode = 400;
+    throw bad;
+  }
 
-  const weatherData = {
-    well: wellId,
-    temperature: data.main.temp,
-    humidity: data.main.humidity,
-    rainfall: data.rain ? data.rain["1h"] : 0,
-    fetchedAt: new Date(),
+  const url = buildWeatherUrl(lat, lng);
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    const error = new Error('Failed to fetch weather data from OpenWeather');
+    error.statusCode = 502;
+    throw error;
+  }
+
+  const data = await response.json();
+
+  const rainfall =
+    (data.rain && (data.rain['1h'] || data.rain['3h'])) != null
+      ? data.rain['1h'] || data.rain['3h']
+      : 0;
+
+  let waterLevelTrend = 'stable';
+  if (rainfall > 10) waterLevelTrend = 'rising';
+  else if (rainfall < 1) waterLevelTrend = 'falling';
+
+  return {
+    wellId: well._id,
+    wellName: well.name,
+    coordinates: { lat, lng },
+    source: 'OpenWeather',
+    raw: data,
+    summary: {
+      temperature: data.main?.temp,
+      feelsLike: data.main?.feels_like,
+      humidity: data.main?.humidity,
+      weather: data.weather?.[0]?.description,
+      rainfallMm: rainfall,
+      waterLevelTrend,
+    },
   };
-
-  await WeatherCache.findOneAndUpdate({ well: wellId }, weatherData, {
-    upsert: true,
-  });
-
-  return weatherData;
 };
+
