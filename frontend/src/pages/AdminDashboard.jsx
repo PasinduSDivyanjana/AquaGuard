@@ -46,6 +46,22 @@ const AdminDashboard = () => {
   const [search, setSearch] = useState("");
   const [usersLoading, setUsersLoading] = useState(false);
 
+  // WELLS STATE
+  const [allWells, setAllWells] = useState([]);
+  const [wellsLoading, setWellsLoading] = useState(false);
+  const [wellSearch, setWellSearch] = useState("");
+  const [wellStatus, setWellStatus] = useState("");
+  const [wellPage, setWellPage] = useState(1);
+  const [wellTotalPages, setWellTotalPages] = useState(1);
+  const [wellTotal, setWellTotal] = useState(0);
+  const WELL_STATUS_OPTIONS = ["Good", "Needs Repair", "Contaminated", "Dry"];
+  const WELL_STATUS_STYLES = {
+    Good: { bg: "#4BDA7F", label: "Good" },
+    "Needs Repair": { bg: "#F5BD27", label: "Needs Repair" },
+    Contaminated: { bg: "#CA6162", label: "Contaminated" },
+    Dry: { bg: "#6B7280", label: "Dry" },
+  };
+
   // Form states for updating details (same as UserDashboard)
   const [updateForm, setUpdateForm] = useState({
     firstName: "",
@@ -67,7 +83,6 @@ const AdminDashboard = () => {
     try {
       setUsersLoading(true);
       const res = await axiosInstance.get("/user");
-
       const users = res.data.data || res.data;
       setAllUsers(users);
     } catch (err) {
@@ -75,6 +90,27 @@ const AdminDashboard = () => {
       toast.error("Failed to fetch users");
     } finally {
       setUsersLoading(false);
+    }
+  };
+
+  // FETCH ALL WELLS (admin)
+  const fetchAllWells = async (page = 1, search = "", status = "") => {
+    try {
+      setWellsLoading(true);
+      const params = new URLSearchParams({ page, limit: 20 });
+      if (search) params.set("search", search);
+      if (status) params.set("status", status);
+      const res = await axiosInstance.get(`/wells/admin/all?${params}`);
+      const d = res.data.data;
+      setAllWells(d.wells);
+      setWellTotal(d.total);
+      setWellTotalPages(d.totalPages);
+      setWellPage(d.page);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch wells");
+    } finally {
+      setWellsLoading(false);
     }
   };
 
@@ -157,6 +193,11 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (activeNav === "users") {
       fetchUsers();
+    }
+    if (activeNav === "wells") {
+      fetchAllWells(1, "", "");
+      setWellSearch("");
+      setWellStatus("");
     }
   }, [activeNav]);
 
@@ -1115,10 +1156,160 @@ const AdminDashboard = () => {
             </div>
           )}
 
+          {/* WELLS MANAGEMENT SECTION */}
+          {activeNav === "wells" && (
+            <div className="space-y-6">
+              {/* Summary stat cards */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                {[
+                  { label: "Total Wells", value: wellTotal, color: "#F5BD27" },
+                  { label: "Good", value: allWells.filter(w => w.status === "Good").length, color: "#4BDA7F" },
+                  { label: "Needs Repair", value: allWells.filter(w => w.status === "Needs Repair").length, color: "#F5BD27" },
+                  { label: "Contaminated / Dry", value: allWells.filter(w => w.status === "Contaminated" || w.status === "Dry").length, color: "#CA6162" },
+                ].map((s) => (
+                  <div key={s.label} className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                    <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-1">{s.label}</p>
+                    <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Search + filter bar */}
+              <div className="bg-[#101624] rounded-xl border border-[#172431] p-4">
+                <div className="flex flex-wrap gap-3">
+                  <input
+                    type="text"
+                    placeholder="🔍 Search by well name..."
+                    value={wellSearch}
+                    onChange={(e) => setWellSearch(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && fetchAllWells(1, wellSearch, wellStatus)}
+                    className="flex-1 min-w-[200px] px-4 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-all"
+                  />
+                  <select
+                    value={wellStatus}
+                    onChange={(e) => {
+                      setWellStatus(e.target.value);
+                      fetchAllWells(1, wellSearch, e.target.value);
+                    }}
+                    className="w-44 px-4 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer"
+                  >
+                    <option value="">All Statuses</option>
+                    {WELL_STATUS_OPTIONS.map((s) => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <button
+                    onClick={() => fetchAllWells(1, wellSearch, wellStatus)}
+                    className="px-6 py-2.5 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold rounded-lg transition-all duration-300"
+                  >
+                    Search
+                  </button>
+                </div>
+              </div>
+
+              {/* Table */}
+              <div className="bg-[#101624] rounded-xl border border-[#172431] overflow-hidden">
+                {wellsLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-[#F5BD27] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                      <p className="text-[#9BA0A6]">Loading wells...</p>
+                    </div>
+                  </div>
+                ) : allWells.length === 0 ? (
+                  <div className="text-center py-16">
+                    <svg className="w-16 h-16 mx-auto text-[#6B7280] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                    <p className="text-[#9BA0A6]">No wells found</p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#0A0E19] border-b border-[#172431]">
+                        <tr>
+                          {["Well Name", "Owner", "Location", "Status", "Photos", "Last Inspected", "Created"].map((h) => (
+                            <th key={h} className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#172431]">
+                        {allWells.map((w) => {
+                          const style = WELL_STATUS_STYLES[w.status] || WELL_STATUS_STYLES.Dry;
+                          const owner = w.user;
+                          return (
+                            <tr key={w._id} className="hover:bg-[#0A0E19] transition-colors">
+                              <td className="px-5 py-4">
+                                <div className="font-semibold text-white">{w.name}</div>
+                                <div className="text-xs text-[#6B7280] mt-0.5 font-mono">{w._id.slice(-8)}</div>
+                              </td>
+                              <td className="px-5 py-4">
+                                {owner ? (
+                                  <div>
+                                    <div className="text-white text-sm">{owner.firstName} {owner.lastName}</div>
+                                    <div className="text-xs text-[#6B7280]">{owner.email}</div>
+                                  </div>
+                                ) : (
+                                  <span className="text-[#6B7280] text-xs">Unknown</span>
+                                )}
+                              </td>
+                              <td className="px-5 py-4 font-mono text-xs text-[#9BA0A6] whitespace-nowrap">
+                                {w.location?.lat?.toFixed(4)}°, {w.location?.lng?.toFixed(4)}°
+                              </td>
+                              <td className="px-5 py-4">
+                                <span
+                                  className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
+                                  style={{ backgroundColor: `${style.bg}18`, color: style.bg, border: `1px solid ${style.bg}30` }}
+                                >
+                                  {w.status}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4 text-center text-[#9BA0A6]">
+                                {w.photos?.length || 0}
+                              </td>
+                              <td className="px-5 py-4 text-[#9BA0A6] whitespace-nowrap">
+                                {w.lastInspected
+                                  ? new Date(w.lastInspected).toLocaleDateString()
+                                  : <span className="text-[#6B7280] italic text-xs">Not inspected</span>}
+                              </td>
+                              <td className="px-5 py-4 text-[#9BA0A6] whitespace-nowrap">
+                                {new Date(w.createdAt).toLocaleDateString()}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Pagination */}
+              {wellTotalPages > 1 && (
+                <div className="flex items-center justify-between bg-[#0A0E19] rounded-xl border border-[#172431] px-5 py-3">
+                  <span className="text-sm text-[#9BA0A6]">Page {wellPage} of {wellTotalPages} &nbsp;·&nbsp; {wellTotal} wells total</span>
+                  <div className="flex gap-2">
+                    <button
+                      disabled={wellPage <= 1}
+                      onClick={() => { const p = wellPage - 1; setWellPage(p); fetchAllWells(p, wellSearch, wellStatus); }}
+                      className="px-4 py-2 bg-[#101624] text-[#9BA0A6] rounded-lg hover:bg-[#172431] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >Previous</button>
+                    <button
+                      disabled={wellPage >= wellTotalPages}
+                      onClick={() => { const p = wellPage + 1; setWellPage(p); fetchAllWells(p, wellSearch, wellStatus); }}
+                      className="px-4 py-2 bg-[#101624] text-[#9BA0A6] rounded-lg hover:bg-[#172431] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >Next</button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Placeholder for other nav items */}
           {activeNav !== "dashboard" &&
             activeNav !== "settings" &&
-            activeNav !== "users" && (
+            activeNav !== "users" &&
+            activeNav !== "wells" && (
               <div className="bg-[#101624] rounded-xl border border-[#172431] p-6">
                 <h2 className="text-2xl font-bold text-white mb-4">
                   {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}{" "}

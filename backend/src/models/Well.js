@@ -1,24 +1,20 @@
-/**
- * Well model - name, location (lat/lng), status, photos (max 5)
- */
-
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const wellSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Well name is required'],
+      required: [true, "Well name is required"],
       trim: true,
     },
     location: {
-      lat: { type: Number, required: [true, 'Latitude is required'] },
-      lng: { type: Number, required: [true, 'Longitude is required'] },
+      lat: { type: Number, required: [true, "Latitude is required"] },
+      lng: { type: Number, required: [true, "Longitude is required"] },
     },
     status: {
       type: String,
-      enum: ['Good', 'Needs Repair', 'Contaminated', 'Dry'],
-      default: 'Good',
+      enum: ["Good", "Needs Repair", "Contaminated", "Dry"],
+      default: "Good",
     },
     lastInspected: {
       type: Date,
@@ -29,12 +25,19 @@ const wellSchema = new mongoose.Schema(
       default: [],
       validate: {
         validator: (v) => v.length <= 5,
-        message: 'Maximum 5 photos allowed',
+        message: "Maximum 5 photos allowed",
       },
+    },
+
+    // ✅ ADD THIS
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
     },
   },
   { timestamps: true }
 );
 
-const WellModel = mongoose.model('Well', wellSchema);
+const WellModel = mongoose.model("Well", wellSchema);
 export default WellModel;

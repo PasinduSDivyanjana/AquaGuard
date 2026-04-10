@@ -1,8 +1,9 @@
+// frontend/src/pages/UserDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
-
+import WellList from "./WellList";
 const UserDashboard = () => {
   const navigate = useNavigate();
 
@@ -29,7 +30,7 @@ const UserDashboard = () => {
     confirmPassword: "",
   });
 
-  // ✅ Fetch user profile from backend
+  // Fetch user profile from backend
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -58,7 +59,7 @@ const UserDashboard = () => {
     fetchProfile();
   }, []);
 
-  // ✅ Logout with confirmation
+  // Logout with confirmation
   const handleLogout = () => {
     setShowLogoutConfirm(false);
     localStorage.removeItem("token");
@@ -67,7 +68,7 @@ const UserDashboard = () => {
     navigate("/login");
   };
 
-  // ✅ Update user details
+  // Update user details
   const handleUpdateDetails = async (e) => {
     e.preventDefault();
     try {
@@ -94,16 +95,11 @@ const UserDashboard = () => {
         newPassword: passwordForm.newPassword,
       });
 
-      // 🔥 1. Kill session
       localStorage.removeItem("token");
       localStorage.removeItem("user");
-
-      // (optional) if you use axios default headers
       delete axiosInstance.defaults.headers.common["Authorization"];
 
       toast.success("Password changed successfully. Please login again.");
-
-      // 🔥 2. Redirect to login
       navigate("/login");
     } catch (err) {
       console.error("PASSWORD ERROR:", err.response?.data || err.message);
@@ -186,9 +182,9 @@ const UserDashboard = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab("btn1")}
+              onClick={() => setActiveTab("well")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeTab === "btn1"
+                activeTab === "well"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
               }`}
@@ -203,10 +199,10 @@ const UserDashboard = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
                 />
               </svg>
-              {sidebarOpen && <span>Button 1</span>}
+              {sidebarOpen && <span>Well</span>}
             </button>
 
             <button
@@ -302,7 +298,7 @@ const UserDashboard = () => {
               <div>
                 <h1 className="text-2xl font-bold text-white">
                   {activeTab === "profile" && "Profile"}
-                  {activeTab === "btn1" && "Button 1"}
+                  {activeTab === "well" && "Well Management"}
                   {activeTab === "btn2" && "Button 2"}
                   {activeTab === "settings" && "Settings"}
                 </h1>
@@ -429,13 +425,10 @@ const UserDashboard = () => {
             </div>
           )}
 
-          {/* Button 1 Page */}
-          {activeTab === "btn1" && (
+          {/* Well Management Page - Using WellList Component */}
+          {activeTab === "well" && (
             <div className="bg-[#101624] rounded-xl border border-[#172431] p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Button 1 Page
-              </h2>
-              <p className="text-[#9BA0A6]">Content for Button 1 goes here.</p>
+              <WellList />
             </div>
           )}
 
@@ -565,7 +558,6 @@ const UserDashboard = () => {
                         <button
                           type="button"
                           onClick={() => {
-                            // Reset form to current user data
                             if (user) {
                               setUpdateForm({
                                 firstName: user.firstName || "",
