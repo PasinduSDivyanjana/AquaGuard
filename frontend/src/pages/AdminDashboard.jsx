@@ -1783,7 +1783,6 @@ const AdminDashboard = () => {
             })()}
 
           {/* REPORTS SECTION */}
-          {/* REPORTS SECTION */}
           {activeNav === "reports" && (
             <div className="space-y-6">
               {/* Header */}

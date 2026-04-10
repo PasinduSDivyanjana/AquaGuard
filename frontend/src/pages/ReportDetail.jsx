@@ -1,7 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router";
 import toast from "react-hot-toast";
-import { fetchReportById, updateReportStatus, deleteReport } from "../api/reportApi";
+import {
+  fetchReportById,
+  updateReportStatus,
+  deleteReport,
+} from "../api/reportApi";
 import {
   ArrowLeft,
   CheckCircle,
@@ -20,6 +24,9 @@ import {
   Image as ImageIcon,
   FileText,
   Hash,
+  Clock,
+  Award,
+  Shield,
 } from "lucide-react";
 
 /* ─── Condition meta ─────────────────────────────────────────── */
@@ -28,21 +35,25 @@ const CONDITION_META = {
     icon: <Droplets className="w-4 h-4" />,
     label: "Dry",
     colors: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    gradient: "from-amber-500/20 to-transparent",
   },
   CONTAMINATED: {
     icon: <Biohazard className="w-4 h-4" />,
     label: "Contaminated",
     colors: "bg-red-500/15 text-red-400 border-red-500/30",
+    gradient: "from-red-500/20 to-transparent",
   },
   DAMAGED: {
     icon: <Wrench className="w-4 h-4" />,
     label: "Damaged",
     colors: "bg-orange-500/15 text-orange-400 border-orange-500/30",
+    gradient: "from-orange-500/20 to-transparent",
   },
   LOW_WATER: {
     icon: <AlertTriangle className="w-4 h-4" />,
     label: "Low Water",
     colors: "bg-blue-500/15 text-blue-400 border-blue-500/30",
+    gradient: "from-blue-500/20 to-transparent",
   },
 };
 
@@ -52,78 +63,143 @@ const STATUS_META = {
     dot: "bg-amber-400",
     text: "text-amber-400",
     bg: "bg-amber-400/10 border-amber-400/25",
-    label: "Pending",
+    label: "Pending Review",
+    icon: <Clock className="w-3.5 h-3.5" />,
   },
   verified: {
     dot: "bg-emerald-400",
     text: "text-emerald-400",
     bg: "bg-emerald-400/10 border-emerald-400/25",
     label: "Verified",
+    icon: <CheckCircle className="w-3.5 h-3.5" />,
   },
   rejected: {
     dot: "bg-red-400",
     text: "text-red-400",
     bg: "bg-red-400/10 border-red-400/25",
     label: "Rejected",
+    icon: <XCircle className="w-3.5 h-3.5" />,
   },
 };
 
 /* ─── Severity ring ──────────────────────────────────────────── */
 function SeverityRing({ score }) {
-  const radius = 36;
+  const radius = 48;
   const circumference = 2 * Math.PI * radius;
   const pct = Math.min(10, score) / 10;
   const offset = circumference * (1 - pct);
 
-  const colorClass =
-    score >= 9 ? "#ef4444"
-    : score >= 7 ? "#f97316"
-    : score >= 4 ? "#eab308"
-    : "#22c55e";
+  const color = {
+    bg:
+      score >= 9
+        ? "#ef4444"
+        : score >= 7
+        ? "#f97316"
+        : score >= 4
+        ? "#eab308"
+        : "#22c55e",
+    light:
+      score >= 9
+        ? "rgba(239,68,68,0.2)"
+        : score >= 7
+        ? "rgba(249,115,22,0.2)"
+        : score >= 4
+        ? "rgba(234,179,8,0.2)"
+        : "rgba(34,197,94,0.2)",
+  };
 
   const label =
-    score >= 9 ? "Critical"
-    : score >= 7 ? "High"
-    : score >= 4 ? "Medium"
-    : "Low";
+    score >= 9
+      ? "Critical"
+      : score >= 7
+      ? "High"
+      : score >= 4
+      ? "Medium"
+      : "Low";
 
   return (
-    <div className="flex flex-col items-center gap-1">
-      <div className="relative w-24 h-24">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 88 88">
-          <circle cx="44" cy="44" r={radius} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="6" />
+    <div className="flex flex-col items-center gap-2 group">
+      <div className="relative w-32 h-32">
+        {/* Glow effect */}
+        <div
+          className="absolute inset-0 rounded-full blur-xl opacity-20 group-hover:opacity-40 transition-opacity duration-500"
+          style={{ backgroundColor: color.bg }}
+        />
+
+        <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
+          {/* Background circle */}
           <circle
-            cx="44" cy="44" r={radius}
+            cx="60"
+            cy="60"
+            r={radius}
             fill="none"
-            stroke={colorClass}
-            strokeWidth="6"
+            stroke="rgba(255,255,255,0.05)"
+            strokeWidth="8"
+          />
+
+          {/* Progress circle with gradient */}
+          <defs>
+            <linearGradient
+              id="severityGradient"
+              x1="0%"
+              y1="0%"
+              x2="100%"
+              y2="100%"
+            >
+              <stop offset="0%" stopColor={color.bg} />
+              <stop offset="100%" stopColor={color.bg} stopOpacity="0.6" />
+            </linearGradient>
+          </defs>
+          <circle
+            cx="60"
+            cy="60"
+            r={radius}
+            fill="none"
+            stroke="url(#severityGradient)"
+            strokeWidth="8"
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
-            style={{ transition: "stroke-dashoffset 0.8s ease, stroke 0.4s ease", filter: `drop-shadow(0 0 6px ${colorClass})` }}
+            style={{
+              transition: "stroke-dashoffset 1s ease-out, stroke 0.4s ease",
+            }}
           />
         </svg>
+
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold text-white leading-none">{score}</span>
-          <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">/ 10</span>
+          <span className="text-3xl font-bold text-white leading-none tabular-nums">
+            {score}
+          </span>
+          <span className="text-[10px] text-gray-500 font-medium uppercase tracking-wider mt-0.5">
+            / 10
+          </span>
         </div>
       </div>
-      <span className="text-xs font-semibold uppercase tracking-widest" style={{ color: colorClass }}>
-        {label}
-      </span>
+      <div
+        className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider"
+        style={{ backgroundColor: color.light, color: color.bg }}
+      >
+        {label} Severity
+      </div>
     </div>
   );
 }
 
-/* ─── Info field ─────────────────────────────────────────────── */
-function InfoField({ icon, label, children }) {
+/* ─── Info card ─────────────────────────────────────────────── */
+function InfoCard({ icon, title, children, className = "" }) {
   return (
-    <div className="flex flex-col gap-1.5">
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 uppercase tracking-wider">
-        <span className="text-gray-600">{icon}</span>
-        {label}
+    <div
+      className={`bg-gradient-to-br from-[#0A0E19] to-[#0D1220] rounded-xl border border-[#172431] p-5 hover:border-[#F5BD27]/30 transition-all duration-300 ${className}`}
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <div className="p-1.5 rounded-lg bg-[#F5BD27]/10">
+          <div className="text-[#F5BD27]">{icon}</div>
+        </div>
+        <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          {title}
+        </span>
       </div>
-      <div className="text-sm text-gray-200">{children}</div>
+      {children}
     </div>
   );
 }
@@ -143,13 +219,15 @@ export default function ReportDetail() {
       setReport(res.data);
     } catch (err) {
       toast.error("Report not found");
-      navigate("/");
+      navigate("/adminDashboard");
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => { loadReport(); }, [id]);
+  useEffect(() => {
+    loadReport();
+  }, [id]);
 
   const handleStatusChange = async (newStatus) => {
     setActionLoading(true);
@@ -168,8 +246,8 @@ export default function ReportDetail() {
     setActionLoading(true);
     try {
       await deleteReport(id);
-      toast.success("Report deleted");
-      navigate("/");
+      toast.success("Report deleted successfully");
+      navigate("/adminDashboard");
     } catch (err) {
       toast.error(err.message);
       setDeleteConfirm(false);
@@ -191,9 +269,16 @@ export default function ReportDetail() {
   /* ── Loading ── */
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <Loader2 className="w-8 h-8 text-aqua animate-spin" />
-        <p className="text-sm text-gray-400">Loading report…</p>
+      <div className="min-h-screen bg-gradient-to-br from-[#0A0E19] to-[#101624] flex flex-col items-center justify-center gap-4">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-[#F5BD27]/20 border-t-[#F5BD27] rounded-full animate-spin" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className="w-8 h-8 bg-[#F5BD27]/20 rounded-full animate-pulse" />
+          </div>
+        </div>
+        <p className="text-sm text-gray-400 font-medium">
+          Loading report details...
+        </p>
       </div>
     );
   }
@@ -204,195 +289,293 @@ export default function ReportDetail() {
     icon: null,
     label: report.conditionType,
     colors: "bg-gray-500/15 text-gray-400 border-gray-500/30",
+    gradient: "from-gray-500/20 to-transparent",
   };
   const status = STATUS_META[report.status] || STATUS_META.pending;
 
   return (
-    <div className="min-h-screen px-6 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-[#0A0E19] to-[#101624] px-6 py-8">
       {/* ── Header ── */}
-      <div className="mb-8">
+      <div className="max-w-5xl mx-auto">
         <button
-          id="back-btn"
-          onClick={() => navigate("/")}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-white transition-colors mb-5 group"
+          onClick={() => navigate("/adminDashboard")}
+          className="group flex items-center gap-2 px-4 py-2 mb-6 rounded-lg bg-[#101624] border border-[#172431] hover:border-[#F5BD27]/50 hover:bg-[#F5BD27]/5 transition-all duration-300"
         >
-          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform duration-200" />
-          Back to Dashboard
+          <ArrowLeft className="w-4 h-4 text-[#9BA0A6] group-hover:text-[#F5BD27] group-hover:-translate-x-0.5 transition-all duration-200" />
+          <span className="text-sm text-[#9BA0A6] group-hover:text-white font-medium">
+            Back to Dashboard
+          </span>
         </button>
-        <p className="text-xs font-semibold text-aqua uppercase tracking-widest mb-1">
-          Report Detail
-        </p>
-        <h1 className="text-3xl font-bold text-white">
-          {report.wellId?.name || "Unknown Well"}
-        </h1>
-      </div>
 
-      <div className="max-w-3xl space-y-5">
-
-        {/* ── Hero card: severity + badges ── */}
-        <div className="rounded-2xl border border-dark-border bg-dark-card/60 backdrop-blur-md p-6 flex items-center gap-6">
-          <SeverityRing score={report.severityScore} />
-          <div className="flex-1 space-y-3">
-            <div className="flex flex-wrap gap-2">
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-semibold ${cond.colors}`}>
-                {cond.icon}
-                {cond.label}
-              </span>
-              <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-semibold ${status.bg} ${status.text}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
-                {status.label}
-              </span>
-            </div>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500 font-mono">
-              <Hash className="w-3 h-3" />
-              {report._id}
-            </div>
+        <div className="mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-[#F5BD27]/10 rounded-full mb-4">
+            <div className="w-2 h-2 bg-[#F5BD27] rounded-full animate-pulse" />
+            <span className="text-xs font-medium text-[#F5BD27] uppercase tracking-wider">
+              Report Details
+            </span>
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">
+            {report.wellId?.name || "Unknown Well"}
+          </h1>
+          <div className="flex items-center gap-2 text-[#6B7280] text-sm">
+            <Hash className="w-4 h-4" />
+            <span className="font-mono">ID: {report._id}</span>
           </div>
         </div>
 
-        {/* ── Info grid ── */}
-        <div className="rounded-2xl border border-dark-border bg-dark-card/60 backdrop-blur-md p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <InfoField icon={<User className="w-3.5 h-3.5" />} label="Reported By">
-              <p className="font-medium text-gray-200">
-                {report.reportedBy?.firstName} {report.reportedBy?.lastName}
-              </p>
-              {report.reportedBy?.email && (
-                <p className="text-xs text-gray-500 mt-0.5">{report.reportedBy.email}</p>
-              )}
-            </InfoField>
-
-            <InfoField icon={<MapPin className="w-3.5 h-3.5" />} label="Well Location">
-              {report.wellId?.location ? (
-                <span className="font-mono text-gray-300">
-                  {report.wellId.location.lat?.toFixed(6)},{" "}
-                  {report.wellId.location.lng?.toFixed(6)}
-                </span>
-              ) : (
-                <span className="text-gray-500">N/A</span>
-              )}
-            </InfoField>
-
-            <InfoField icon={<Activity className="w-3.5 h-3.5" />} label="Well Status">
-              {report.wellId?.status ? (
-                <span className="text-gray-300">{report.wellId.status}</span>
-              ) : (
-                <span className="text-gray-500">N/A</span>
-              )}
-            </InfoField>
-
-            <InfoField icon={<Calendar className="w-3.5 h-3.5" />} label="Reported At">
-              <span className="text-gray-300">{formatDate(report.createdAt)}</span>
-            </InfoField>
-          </div>
-        </div>
-
-        {/* ── Description ── */}
-        {report.description && (
-          <div className="rounded-2xl border border-dark-border bg-dark-card/60 backdrop-blur-md p-6">
-            <div className="flex items-center gap-2 mb-3">
-              <FileText className="w-4 h-4 text-gray-500" />
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Description</span>
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          {/* Left Column - Severity & Status */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Severity Card */}
+            <div className="bg-gradient-to-br from-[#101624] to-[#0A0E19] rounded-2xl border border-[#172431] p-6 flex flex-col items-center">
+              <SeverityRing score={report.severityScore} />
+              <div className="mt-6 w-full space-y-3">
+                <div className="flex items-center justify-between pt-4 border-t border-[#172431]">
+                  <span className="text-xs text-[#9BA0A6]">Condition</span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg border text-xs font-semibold ${cond.colors}`}
+                  >
+                    {cond.icon}
+                    {cond.label}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#9BA0A6]">Status</span>
+                  <span
+                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-xs font-semibold ${status.bg} ${status.text}`}
+                  >
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${status.dot}`}
+                    />
+                    {status.icon}
+                    {status.label}
+                  </span>
+                </div>
+              </div>
             </div>
-            <p className="text-sm text-gray-300 leading-relaxed">{report.description}</p>
+
+            {/* Well Info Card */}
+            <InfoCard
+              icon={<MapPin className="w-4 h-4" />}
+              title="Well Information"
+            >
+              <div className="space-y-3">
+                <div>
+                  <p className="text-xs text-[#6B7280] mb-1">Coordinates</p>
+                  {report.wellId?.location ? (
+                    <p className="text-sm text-white font-mono">
+                      {report.wellId.location.lat?.toFixed(6)}°,{" "}
+                      {report.wellId.location.lng?.toFixed(6)}°
+                    </p>
+                  ) : (
+                    <p className="text-sm text-gray-500">N/A</p>
+                  )}
+                </div>
+                <div>
+                  <p className="text-xs text-[#6B7280] mb-1">Current Status</p>
+                  {report.wellId?.status ? (
+                    <span className="inline-flex px-2 py-1 rounded-lg text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/30">
+                      {report.wellId.status}
+                    </span>
+                  ) : (
+                    <p className="text-sm text-gray-500">N/A</p>
+                  )}
+                </div>
+              </div>
+            </InfoCard>
           </div>
-        )}
 
-        {/* ── Evidence image ── */}
-        {report.imageURL && (
-          <div className="rounded-2xl border border-dark-border bg-dark-card/60 backdrop-blur-md p-6">
-            <div className="flex items-center gap-2 mb-4">
-              <ImageIcon className="w-4 h-4 text-gray-500" />
-              <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Evidence Image</span>
-            </div>
-            <img
-              src={report.imageURL}
-              alt="Report evidence"
-              className="w-full max-h-72 object-cover rounded-xl border border-dark-border"
-              onError={(e) => { e.target.closest("div.rounded-2xl").style.display = "none"; }}
-            />
-          </div>
-        )}
+          {/* Right Column - Details */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Reporter Info */}
+            <InfoCard icon={<User className="w-4 h-4" />} title="Reported By">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-lg">
+                  {report.reportedBy?.firstName?.charAt(0) ||
+                    report.reportedBy?.email?.charAt(0) ||
+                    "?"}
+                </div>
+                <div>
+                  <p className="text-white font-semibold">
+                    {report.reportedBy?.firstName} {report.reportedBy?.lastName}
+                  </p>
+                  {report.reportedBy?.email && (
+                    <p className="text-xs text-[#6B7280]">
+                      {report.reportedBy.email}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </InfoCard>
 
-        {/* ── Actions ── */}
-        <div className="rounded-2xl border border-dark-border bg-dark-card/60 backdrop-blur-md p-6">
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-4">Actions</p>
+            {/* Date & Time */}
+            <InfoCard
+              icon={<Calendar className="w-4 h-4" />}
+              title="Report Information"
+            >
+              <div className="space-y-2">
+                <div className="flex items-center justify-between py-2 border-b border-[#172431]">
+                  <span className="text-xs text-[#6B7280]">Reported At</span>
+                  <span className="text-sm text-white">
+                    {formatDate(report.createdAt)}
+                  </span>
+                </div>
+                {report.updatedAt !== report.createdAt && (
+                  <div className="flex items-center justify-between py-2">
+                    <span className="text-xs text-[#6B7280]">Last Updated</span>
+                    <span className="text-sm text-white">
+                      {formatDate(report.updatedAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            </InfoCard>
 
-          {!deleteConfirm ? (
-            <div className="flex flex-wrap gap-3">
-              {report.status !== "verified" && (
-                <button
-                  id="verify-btn"
-                  onClick={() => handleStatusChange("verified")}
-                  disabled={actionLoading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
-                  Verify
-                </button>
-              )}
-
-              {report.status !== "rejected" && (
-                <button
-                  id="reject-btn"
-                  onClick={() => handleStatusChange("rejected")}
-                  disabled={actionLoading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                  Reject
-                </button>
-              )}
-
-              {report.status !== "pending" && (
-                <button
-                  id="reset-pending-btn"
-                  onClick={() => handleStatusChange("pending")}
-                  disabled={actionLoading}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
-                >
-                  {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
-                  Reset to Pending
-                </button>
-              )}
-
-              <button
-                id="delete-btn"
-                onClick={() => setDeleteConfirm(true)}
-                disabled={actionLoading}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-dark-border text-gray-500 hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 text-sm font-medium ml-auto transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed"
+            {/* Description */}
+            {report.description && (
+              <InfoCard
+                icon={<FileText className="w-4 h-4" />}
+                title="Description"
               >
-                <Trash2 className="w-4 h-4" />
-                Delete
-              </button>
-            </div>
-          ) : (
-            /* Confirm delete */
-            <div className="flex items-center gap-4 p-4 rounded-xl border border-red-500/30 bg-red-500/10">
-              <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-red-300">Delete this report?</p>
-                <p className="text-xs text-gray-400 mt-0.5">This action cannot be undone.</p>
+                <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap">
+                  {report.description}
+                </p>
+              </InfoCard>
+            )}
+
+            {/* Evidence Image */}
+            {report.imageURL && (
+              <div className="bg-gradient-to-br from-[#101624] to-[#0A0E19] rounded-2xl border border-[#172431] overflow-hidden hover:border-[#F5BD27]/30 transition-all duration-300">
+                <div className="p-5 border-b border-[#172431]">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1.5 rounded-lg bg-[#F5BD27]/10">
+                      <ImageIcon className="w-4 h-4 text-[#F5BD27]" />
+                    </div>
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                      Evidence Image
+                    </span>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <img
+                    src={report.imageURL}
+                    alt="Report evidence"
+                    className="w-full max-h-96 object-contain rounded-xl border border-[#172431] hover:scale-[1.02] transition-transform duration-300"
+                    onError={(e) => {
+                      e.target.closest(".rounded-2xl").style.display = "none";
+                    }}
+                  />
+                </div>
               </div>
-              <div className="flex gap-2">
-                <button
-                  id="confirm-delete-btn"
-                  onClick={handleDelete}
-                  disabled={actionLoading}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-400 text-xs font-semibold hover:bg-red-500/30 transition-colors disabled:opacity-50"
-                >
-                  {actionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  Confirm
-                </button>
-                <button
-                  onClick={() => setDeleteConfirm(false)}
-                  className="px-3 py-2 rounded-lg border border-dark-border text-gray-400 text-xs font-medium hover:text-gray-200 hover:border-white/20 transition-colors"
-                >
-                  Cancel
-                </button>
+            )}
+
+            {/* Actions */}
+            <div className="bg-gradient-to-br from-[#101624] to-[#0A0E19] rounded-2xl border border-[#172431] p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-1.5 rounded-lg bg-[#F5BD27]/10">
+                  <Shield className="w-4 h-4 text-[#F5BD27]" />
+                </div>
+                <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Moderation Actions
+                </span>
               </div>
+
+              {!deleteConfirm ? (
+                <div className="flex flex-wrap gap-3">
+                  {report.status !== "verified" && (
+                    <button
+                      onClick={() => handleStatusChange("verified")}
+                      disabled={actionLoading}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-500/50 text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed group"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      )}
+                      Verify Report
+                    </button>
+                  )}
+
+                  {report.status !== "rejected" && (
+                    <button
+                      onClick={() => handleStatusChange("rejected")}
+                      disabled={actionLoading}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 hover:bg-red-500/20 hover:border-red-500/50 text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed group"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      )}
+                      Reject Report
+                    </button>
+                  )}
+
+                  {report.status !== "pending" && (
+                    <button
+                      onClick={() => handleStatusChange("pending")}
+                      disabled={actionLoading}
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 hover:bg-amber-500/20 hover:border-amber-500/50 text-sm font-medium transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed group"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RotateCcw className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                      )}
+                      Reset to Pending
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => setDeleteConfirm(true)}
+                    disabled={actionLoading}
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl border border-[#172431] text-[#9BA0A6] hover:text-red-400 hover:border-red-500/30 hover:bg-red-500/10 text-sm font-medium ml-auto transition-all duration-200 disabled:opacity-40 disabled:cursor-not-allowed group"
+                  >
+                    <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                    Delete Report
+                  </button>
+                </div>
+              ) : (
+                /* Confirm delete */
+                <div className="flex items-center gap-4 p-4 rounded-xl border border-red-500/30 bg-red-500/10 animate-in slide-in-from-top duration-200">
+                  <div className="p-2 rounded-lg bg-red-500/20">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-red-300">
+                      Delete this report?
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      This action cannot be undone. All data will be permanently
+                      removed.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleDelete}
+                      disabled={actionLoading}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-400 text-sm font-semibold hover:bg-red-500/30 transition-all duration-200 disabled:opacity-50"
+                    >
+                      {actionLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-4 h-4" />
+                      )}
+                      Confirm
+                    </button>
+                    <button
+                      onClick={() => setDeleteConfirm(false)}
+                      className="px-4 py-2 rounded-lg border border-[#172431] bg-[#0A0E19] text-[#9BA0A6] text-sm font-medium hover:text-white hover:border-white/20 transition-all duration-200"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

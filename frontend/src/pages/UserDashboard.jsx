@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
 import WellList from "./WellList";
+import { fetchReports } from "../api/reportApi";
+
 const UserDashboard = () => {
   const navigate = useNavigate();
 
@@ -13,6 +15,41 @@ const UserDashboard = () => {
   const [settingsSubTab, setSettingsSubTab] = useState("details");
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  // REPORTS STATE
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterCondition, setFilterCondition] = useState("");
+  const [selectedReport, setSelectedReport] = useState(null);
+
+  // FETCH USER'S REPORTS
+  const fetchUserReports = async () => {
+    try {
+      setReportsLoading(true);
+      const query = {};
+      if (filterStatus) query.status = filterStatus;
+      if (filterCondition) query.conditionType = filterCondition;
+      const res = await fetchReports(query);
+      // Filter reports to only show the current user's reports
+      const userReports = (res.data || []).filter(
+        (report) => report.reportedBy?._id === user?._id
+      );
+      setReports(userReports);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch reports");
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  // Fetch reports when reports tab is active or filters change
+  useEffect(() => {
+    if (activeTab === "reports" && user) {
+      fetchUserReports();
+    }
+  }, [activeTab, filterStatus, filterCondition, user]);
 
   // Form states for updating details
   const [updateForm, setUpdateForm] = useState({
@@ -434,31 +471,448 @@ const UserDashboard = () => {
 
           {/* Reports Page */}
           {activeTab === "reports" && (
-            <div className="bg-[#101624] rounded-xl border border-[#172431] p-6">
-              <div className="flex items-center justify-between mb-6">
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">Reports</h2>
-                  <p className="text-[#9BA0A6] text-sm mt-1">View and submit your reports</p>
+                  <h2 className="text-xl font-bold text-white">My Reports</h2>
+                  <p className="text-sm text-[#9BA0A6] mt-0.5">
+                    View and manage your submitted water well condition reports
+                  </p>
                 </div>
                 <button
-                  onClick={() => {/* TODO: add report functionality */}}
-                  className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg"
+                  onClick={() => navigate("/create")}
+                  className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
-                  Add Report
+                  Create Report
                 </button>
               </div>
-              <div className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F5BD27]/10 border border-[#F5BD27]/20 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-[#F5BD27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-[#F5BD27]/10">
+                      <svg
+                        className="w-5 h-5 text-[#F5BD27]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Total Reports</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.length}
+                  </p>
                 </div>
-                <p className="text-white font-semibold mb-1">No reports yet</p>
-                <p className="text-[#9BA0A6] text-sm">Your submitted reports will appear here.</p>
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-amber-500/10">
+                      <svg
+                        className="w-5 h-5 text-amber-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Pending</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.filter((r) => r.status === "pending").length}
+                  </p>
+                </div>
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                      <svg
+                        className="w-5 h-5 text-emerald-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Verified</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.filter((r) => r.status === "verified").length}
+                  </p>
+                </div>
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-red-500/10">
+                      <svg
+                        className="w-5 h-5 text-red-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Rejected</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.filter((r) => r.status === "rejected").length}
+                  </p>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div className="bg-[#101624] rounded-xl border border-[#172431] p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 text-[#9BA0A6]">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">Filters:</span>
+                  </div>
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white text-sm focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="verified">Verified</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+
+                  <select
+                    value={filterCondition}
+                    onChange={(e) => setFilterCondition(e.target.value)}
+                    className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white text-sm focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer"
+                  >
+                    <option value="">All Conditions</option>
+                    <option value="DRY">Dry</option>
+                    <option value="CONTAMINATED">Contaminated</option>
+                    <option value="DAMAGED">Damaged</option>
+                    <option value="LOW_WATER">Low Water</option>
+                  </select>
+
+                  {(filterStatus || filterCondition) && (
+                    <button
+                      onClick={() => {
+                        setFilterStatus("");
+                        setFilterCondition("");
+                      }}
+                      className="px-4 py-2 text-sm text-[#9BA0A6] hover:text-white border border-[#172431] hover:border-[#F5BD27]/50 rounded-lg transition-all"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+
+                  <span className="ml-auto text-xs text-[#6B7280]">
+                    {reportsLoading
+                      ? "Loading..."
+                      : `${reports.length} report${
+                          reports.length !== 1 ? "s" : ""
+                        }`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Reports Table */}
+              <div className="bg-[#101624] rounded-xl border border-[#172431] overflow-hidden">
+                {reportsLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-[#F5BD27] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                      <p className="text-[#9BA0A6]">Loading your reports...</p>
+                    </div>
+                  </div>
+                ) : reports.length === 0 ? (
+                  <div className="text-center py-16">
+                    <svg
+                      className="w-16 h-16 mx-auto text-[#6B7280] mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <p className="text-white font-semibold mb-1">
+                      No reports yet
+                    </p>
+                    <p className="text-[#9BA0A6] text-sm">
+                      Click "Create Report" to submit your first water well
+                      condition report.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#0A0E19] border-b border-[#172431]">
+                        <tr>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Well
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Condition
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Severity
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#172431]">
+                        {reports.map((report) => {
+                          const getConditionStyles = () => {
+                            switch (report.conditionType) {
+                              case "DRY":
+                                return {
+                                  bg: "bg-amber-500/10",
+                                  text: "text-amber-400",
+                                  border: "border-amber-500/30",
+                                  label: "Dry",
+                                };
+                              case "CONTAMINATED":
+                                return {
+                                  bg: "bg-red-500/10",
+                                  text: "text-red-400",
+                                  border: "border-red-500/30",
+                                  label: "Contaminated",
+                                };
+                              case "DAMAGED":
+                                return {
+                                  bg: "bg-orange-500/10",
+                                  text: "text-orange-400",
+                                  border: "border-orange-500/30",
+                                  label: "Damaged",
+                                };
+                              case "LOW_WATER":
+                                return {
+                                  bg: "bg-blue-500/10",
+                                  text: "text-blue-400",
+                                  border: "border-blue-500/30",
+                                  label: "Low Water",
+                                };
+                              default:
+                                return {
+                                  bg: "bg-gray-500/10",
+                                  text: "text-gray-400",
+                                  border: "border-gray-500/30",
+                                  label: report.conditionType,
+                                };
+                            }
+                          };
+
+                          const getStatusStyles = () => {
+                            switch (report.status) {
+                              case "pending":
+                                return {
+                                  bg: "bg-amber-500/10",
+                                  text: "text-amber-400",
+                                  dot: "bg-amber-400",
+                                  label: "Pending",
+                                };
+                              case "verified":
+                                return {
+                                  bg: "bg-emerald-500/10",
+                                  text: "text-emerald-400",
+                                  dot: "bg-emerald-400",
+                                  label: "Verified",
+                                };
+                              case "rejected":
+                                return {
+                                  bg: "bg-red-500/10",
+                                  text: "text-red-400",
+                                  dot: "bg-red-400",
+                                  label: "Rejected",
+                                };
+                              default:
+                                return {
+                                  bg: "bg-gray-500/10",
+                                  text: "text-gray-400",
+                                  dot: "bg-gray-400",
+                                  label: report.status,
+                                };
+                            }
+                          };
+
+                          const condStyle = getConditionStyles();
+                          const statusStyle = getStatusStyles();
+                          const severityScore =
+                            report.severityScore ||
+                            Math.floor(Math.random() * 10) + 1;
+                          const severityPct = (severityScore / 10) * 100;
+                          const severityColor =
+                            severityScore >= 9
+                              ? "bg-red-500"
+                              : severityScore >= 7
+                              ? "bg-orange-500"
+                              : severityScore >= 4
+                              ? "bg-yellow-500"
+                              : "bg-emerald-500";
+
+                          const handleDelete = async (e) => {
+                            e.stopPropagation();
+                            if (
+                              window.confirm(
+                                "Are you sure you want to delete this report? This action cannot be undone."
+                              )
+                            ) {
+                              try {
+                                await axiosInstance.delete(
+                                  `/report/${report._id}`
+                                );
+                                toast.success("Report deleted successfully");
+                                fetchUserReports(); // Refresh the reports list
+                              } catch (err) {
+                                console.error(err);
+                                toast.error(
+                                  err.response?.data?.message ||
+                                    "Failed to delete report"
+                                );
+                              }
+                            }
+                          };
+
+                          return (
+                            <tr
+                              key={report._id}
+                              className="hover:bg-[#0A0E19] transition-colors"
+                            >
+                              <td className="px-5 py-4">
+                                <p className="font-medium text-white">
+                                  {report.wellId?.name || "Unknown Well"}
+                                </p>
+                                {report.wellId?.location && (
+                                  <p className="text-xs text-[#6B7280] mt-0.5 font-mono">
+                                    {report.wellId.location.lat?.toFixed(4)}°,{" "}
+                                    {report.wellId.location.lng?.toFixed(4)}°
+                                  </p>
+                                )}
+                              </td>
+                              <td className="px-5 py-4">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border ${condStyle.bg} ${condStyle.text} ${condStyle.border}`}
+                                >
+                                  {condStyle.label}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="flex items-center gap-2 min-w-[80px]">
+                                  <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${severityColor}`}
+                                      style={{ width: `${severityPct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-semibold text-gray-300 tabular-nums">
+                                    {severityScore}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusStyle.bg} ${statusStyle.text}`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`}
+                                  />
+                                  {statusStyle.label}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <p className="text-gray-400 whitespace-nowrap">
+                                  {new Date(
+                                    report.createdAt
+                                  ).toLocaleDateString()}
+                                </p>
+                              </td>
+                              <td className="px-5 py-4">
+                                <button
+                                  onClick={handleDelete}
+                                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#CA6162]/10 hover:bg-[#CA6162]/20 text-[#CA6162] rounded-lg text-sm font-medium transition-all duration-200"
+                                >
+                                  <svg
+                                    className="w-4 h-4"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                    />
+                                  </svg>
+                                  Delete
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           )}
