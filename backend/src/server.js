@@ -3,6 +3,8 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import reportRoute from "./routes/reportRoute.js";
+import wellRoute from "./routes/wellRoute.js";
+import userRoute from "./routes/userRoute.js";
 
 // 🔑 Register models
 import "./models/User.js";
@@ -18,6 +20,8 @@ app.use(cors({
 app.use(express.json());
 
 app.use("/api/report", reportRoute);
+app.use("/api/wells", wellRoute);
+app.use("/api/users", userRoute);
 
 app.use((err, req, res, next) => {
   console.error(err);

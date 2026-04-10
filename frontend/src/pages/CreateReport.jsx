@@ -2,19 +2,21 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router";
 import toast from "react-hot-toast";
 import { createReport } from "../api/reportApi";
+import { useUser } from "../context/UserContext";
+import WellMap from "../components/WellMap";
 
 export default function CreateReport() {
   const navigate = useNavigate();
+  const { currentUser } = useUser();
   const [loading, setLoading] = useState(false);
+  const [selectedWell, setSelectedWell] = useState(null);
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [imageMode, setImageMode] = useState("capture"); // "capture" or "url"
+  const [imageMode, setImageMode] = useState("capture");
   const fileInputRef = useRef(null);
   const cameraInputRef = useRef(null);
 
   const [form, setForm] = useState({
-    wellId: "",
-    reportedBy: "",
     conditionType: "",
     description: "",
     imageURL: "",
@@ -27,12 +29,10 @@ export default function CreateReport() {
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Image must be under 5MB");
       return;
     }
-
     setImageFile(file);
     setImagePreview(URL.createObjectURL(file));
     setForm({ ...form, imageURL: "" });
@@ -48,16 +48,26 @@ export default function CreateReport() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!form.wellId || !form.reportedBy || !form.conditionType) {
-      toast.error("Please fill in all required fields");
+    if (!currentUser) {
+      toast.error("Please select a user from the sidebar first");
+      return;
+    }
+
+    if (!selectedWell) {
+      toast.error("Please select a well on the map");
+      return;
+    }
+
+    if (!form.conditionType) {
+      toast.error("Please select a condition type");
       return;
     }
 
     setLoading(true);
     try {
       const payload = {
-        wellId: form.wellId,
-        reportedBy: form.reportedBy,
+        wellId: selectedWell._id,
+        reportedBy: currentUser._id,
         conditionType: form.conditionType,
       };
       if (form.description.trim()) payload.description = form.description;
@@ -81,40 +91,44 @@ export default function CreateReport() {
         <p>Submit a new water well condition report</p>
       </div>
 
-      <div className="form-card animate-in animate-in-1">
+      {!currentUser && (
+        <div className="alert-banner animate-in">
+          ⚠️ Please select a user from the sidebar to continue
+        </div>
+      )}
+
+      <div className="form-card animate-in animate-in-1" style={{ maxWidth: "720px" }}>
         <form onSubmit={handleSubmit}>
+          {/* Reporting as */}
           <div className="form-group">
-            <label className="form-label" htmlFor="wellId">
-              Well ID *
-            </label>
-            <input
-              id="wellId"
-              name="wellId"
-              type="text"
-              className="form-input"
-              placeholder="Enter MongoDB Well ObjectId"
-              value={form.wellId}
-              onChange={handleChange}
-              required
+            <label className="form-label">Reporting As</label>
+            {currentUser ? (
+              <div className="reporting-as-badge">
+                <span className="reporting-as-avatar">
+                  {currentUser.firstName[0]}{currentUser.lastName[0]}
+                </span>
+                <div>
+                  <strong>{currentUser.firstName} {currentUser.lastName}</strong>
+                  <span className="reporting-as-role">{currentUser.role}</span>
+                </div>
+              </div>
+            ) : (
+              <p style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>
+                No user selected — use the sidebar dropdown
+              </p>
+            )}
+          </div>
+
+          {/* Well Selection via Map */}
+          <div className="form-group">
+            <label className="form-label">Select Well *</label>
+            <WellMap
+              selectedWellId={selectedWell?._id}
+              onSelectWell={setSelectedWell}
             />
           </div>
 
-          <div className="form-group">
-            <label className="form-label" htmlFor="reportedBy">
-              Reported By (User ID) *
-            </label>
-            <input
-              id="reportedBy"
-              name="reportedBy"
-              type="text"
-              className="form-input"
-              placeholder="Enter MongoDB User ObjectId"
-              value={form.reportedBy}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
+          {/* Condition Type */}
           <div className="form-group">
             <label className="form-label" htmlFor="conditionType">
               Condition Type *
@@ -135,6 +149,7 @@ export default function CreateReport() {
             </select>
           </div>
 
+          {/* Description */}
           <div className="form-group">
             <label className="form-label" htmlFor="description">
               Description
@@ -153,8 +168,6 @@ export default function CreateReport() {
           {/* Image Section */}
           <div className="form-group">
             <label className="form-label">Evidence Image</label>
-
-            {/* Mode Toggle */}
             <div className="image-mode-toggle">
               <button
                 type="button"
@@ -174,68 +187,32 @@ export default function CreateReport() {
 
             {imageMode === "capture" ? (
               <>
-                {/* Image Preview */}
                 {imagePreview && (
                   <div className="image-preview-container">
                     <img src={imagePreview} alt="Preview" className="image-preview" />
-                    <button
-                      type="button"
-                      className="image-remove-btn"
-                      onClick={removeImage}
-                      title="Remove image"
-                    >
+                    <button type="button" className="image-remove-btn" onClick={removeImage} title="Remove">
                       ✕
                     </button>
                   </div>
                 )}
-
-                {/* Capture / Upload Buttons */}
                 {!imagePreview && (
                   <div className="image-capture-area">
                     <div className="capture-icon">📷</div>
                     <p>Take a photo or choose from gallery</p>
-
                     <div className="capture-buttons">
-                      {/* Camera button — opens camera on mobile */}
-                      <button
-                        type="button"
-                        className="btn btn-primary btn-sm"
-                        onClick={() => cameraInputRef.current?.click()}
-                      >
+                      <button type="button" className="btn btn-primary btn-sm" onClick={() => cameraInputRef.current?.click()}>
                         📸 Take Photo
                       </button>
-
-                      {/* File picker */}
-                      <button
-                        type="button"
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => fileInputRef.current?.click()}>
                         🖼️ Choose File
                       </button>
                     </div>
-
-                    {/* Hidden inputs */}
-                    <input
-                      ref={cameraInputRef}
-                      type="file"
-                      accept="image/*"
-                      capture="environment"
-                      onChange={handleFileSelect}
-                      style={{ display: "none" }}
-                    />
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      onChange={handleFileSelect}
-                      style={{ display: "none" }}
-                    />
+                    <input ref={cameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFileSelect} style={{ display: "none" }} />
+                    <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleFileSelect} style={{ display: "none" }} />
                   </div>
                 )}
               </>
             ) : (
-              /* URL Input */
               <input
                 id="imageURL"
                 name="imageURL"
@@ -246,25 +223,14 @@ export default function CreateReport() {
                 onChange={handleChange}
               />
             )}
-
-            <p className="image-hint">
-              Supported: JPEG, PNG, WebP, GIF — Max 5MB
-            </p>
+            <p className="image-hint">Supported: JPEG, PNG, WebP, GIF — Max 5MB</p>
           </div>
 
           <div style={{ display: "flex", gap: "10px", marginTop: "8px" }}>
-            <button
-              type="submit"
-              className="btn btn-primary"
-              disabled={loading}
-            >
+            <button type="submit" className="btn btn-primary" disabled={loading || !currentUser}>
               {loading ? "Submitting..." : "🚀 Submit Report"}
             </button>
-            <button
-              type="button"
-              className="btn btn-ghost"
-              onClick={() => navigate("/")}
-            >
+            <button type="button" className="btn btn-ghost" onClick={() => navigate("/")}>
               Cancel
             </button>
           </div>
