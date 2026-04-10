@@ -1,3 +1,6 @@
+import severityCalculator from "../utils/severityCalculator.js";
+import User from "../models/User.js";
+import Well from "../models/Well.js";
 import Report from "../models/Report.js";
 import { createReportService } from "../services/report.service.js";
 
@@ -84,32 +87,51 @@ export const getReportById = async (req, res) => {
  */
 export const updateReport = async (req, res) => {
   try {
-    const updatedReport = await Report.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    )
-      .populate("reportedBy", "firstName lastName email")
-      .populate("wellId", "name village status");
+    const report = await Report.findById(req.params.id);
+    if (!report) return res.status(404).json({ success: false, message: "Report not found" });
 
-    if (!updatedReport) {
-      return res.status(404).json({
-        success: false,
-        message: "Report not found",
-      });
-    }
+    // Merge updated data
+    const updatedData = { ...report._doc, ...req.body };
+
+    // Fetch user & well
+    const user = await User.findById(updatedData.reportedBy);
+    const well = await Well.findById(updatedData.wellId);
+
+    // Count recent reports
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const recentReportCount = await Report.countDocuments({
+      wellId: updatedData.wellId,
+      conditionType: updatedData.conditionType,
+      createdAt: { $gte: sevenDaysAgo },
+      _id: { $ne: report._id } // exclude current report
+    });
+
+    // Recalculate severity
+    updatedData.severityScore = severityCalculator({
+      conditionType: updatedData.conditionType,
+      hasImage: !!updatedData.imageURL,
+      recentReportCount,
+      userRole: user.role,
+      wellStatus: well.status
+    });
+
+    // Apply update
+    Object.assign(report, updatedData);
+    await report.save();
+
+    const populatedReport = await report.populate([
+      { path: "reportedBy", select: "firstName lastName email" },
+      { path: "wellId", select: "name village status" }
+    ]);
 
     res.status(200).json({
       success: true,
       message: "Report updated successfully",
-      data: updatedReport,
+      data: populatedReport
     });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Error updating report",
-      error: error.message,
-    });
+    res.status(500).json({ success: false, message: "Error updating report", error: error.message });
   }
 };
 
