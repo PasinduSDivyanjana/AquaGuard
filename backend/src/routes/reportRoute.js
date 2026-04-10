@@ -3,7 +3,7 @@ import {
   createReport,
   getAllReports,
   getReportById,
-  updateReport,
+  updateReportStatus,
   deleteReport
 } from "../controllers/reportController.js";
 
@@ -15,7 +15,8 @@ router.get("/", getAllReports);
 
 router.get("/:id", getReportById);
 
-router.put("/:id", updateReport);
+// NEW
+router.patch("/:id/status", updateReportStatus);
 
 router.delete("/:id", deleteReport);
 
