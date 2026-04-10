@@ -1,5 +1,3 @@
-import mongoose from "mongoose";
-
 const reportSchema = new mongoose.Schema({
   wellId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -16,19 +14,24 @@ const reportSchema = new mongoose.Schema({
     required: true,
     enum: ["DRY", "CONTAMINATED", "DAMAGED", "LOW_WATER"]
   },
-  description: String,
-  imageURL: String,
-  severityScore: Number,
+  description: {
+    type: String,
+    maxlength: 500
+  },
+  imageURL: {
+    type: String,
+    trim: true
+  },
+  severityScore: {
+    type: Number,
+    min: 1,
+    max: 10
+  },
   status: {
     type: String,
     default: "pending",
     enum: ["pending", "verified", "rejected"]
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-});
+}, { timestamps: true });
 
-const Report = mongoose.model("Report", reportSchema);
-export default Report;
+reportSchema.index({ wellId: 1, createdAt: -1 });
