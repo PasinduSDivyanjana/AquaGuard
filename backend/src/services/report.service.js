@@ -8,7 +8,10 @@ export const createReportService = async (data) => {
 
   // Fetch related data
   const user = await User.findById(reportedBy);
+  if (!user) throw new Error("User not found");
+
   const well = await Well.findById(wellId);
+  if (!well) throw new Error("Well not found");
 
   // Count recent reports (last 7 days)
   const sevenDaysAgo = new Date();
@@ -20,7 +23,7 @@ export const createReportService = async (data) => {
     createdAt: { $gte: sevenDaysAgo }
   });
 
-  
+
 
   // Intelligent severity calculation
   const severityScore = severityCalculator({
@@ -32,17 +35,33 @@ export const createReportService = async (data) => {
   });
 
   const report = new Report({
-    ...data,
+    wellId,
+    reportedBy,
+    conditionType,
+    description: data.description,
+    imageURL,
     severityScore
   });
 
   return await report.save();
 };
 
-export const getAllReportsService = async () => {
-  return await Report.find()
+export const getAllReportsService = async (query) => {
+  const page = parseInt(query.page) || 1;
+  const limit = parseInt(query.limit) || 10;
+  const skip = (page - 1) * limit;
+
+  const filter = {};
+
+  if (query.status) filter.status = query.status;
+  if (query.conditionType) filter.conditionType = query.conditionType;
+
+  return await Report.find(filter)
     .populate("reportedBy", "firstName lastName email")
-    .populate("wellId", "name village");
+    .populate("wellId", "name village status")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit);
 };
 
 export const getReportByIdService = async (id) => {
@@ -50,6 +69,10 @@ export const getReportByIdService = async (id) => {
 };
 
 export const verifyReportService = async (id, status) => {
+  if (!["pending", "verified", "rejected"].includes(status)) {
+    throw new Error("Invalid status");
+  }
+
   return await Report.findByIdAndUpdate(
     id,
     { status },
