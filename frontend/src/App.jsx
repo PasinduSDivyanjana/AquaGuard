@@ -10,6 +10,8 @@ import { AlertsManagement } from "./pages/AlertsManagement";
 import { AutoTasksApproval } from "./pages/AutoTasksApproval";
 import { WellsAndWeather } from "./pages/WellsAndWeather";
 import WellList from "./pages/WellList";
+import CreateReport from "./pages/CreateReport";
+import ReportDetail from "./pages/ReportDetail";
 import AddWell from "./components/AddWell";
 import EditWell from "./pages/EditWell";
 
@@ -43,6 +45,8 @@ function App() {
         <Route path="/wells" element={<WellList />} />
         <Route path="/wells/add" element={<AddWell />} />
         <Route path="/wells/:id" element={<EditWell />} />
+        <Route path="/create" element={<CreateReport />} />
+        <Route path="/report/:id" element={<ReportDetail />} />
       </Routes>
     </div>
   );

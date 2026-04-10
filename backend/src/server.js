@@ -7,6 +7,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
 import wellRoute from "./routes/wellRoute.js";
+import reportRoute from "./routes/reportRoute.js";
 import { errorHandler, notFound } from "./middlewares/error.js";
 import taskRoutes from "./routes/taskRoutes.js";
 import swaggerUi from "swagger-ui-express";
@@ -42,6 +43,7 @@ app.use(express.json());
 
 // ROUTES
 app.use("/api/tasks/auto", autoTaskRoutes);
+app.use("/api/report", reportRoute);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api/environment", environmentRoutes);

@@ -16,19 +16,30 @@ const reportSchema = new mongoose.Schema({
     required: true,
     enum: ["DRY", "CONTAMINATED", "DAMAGED", "LOW_WATER"]
   },
-  description: String,
-  imageURL: String,
-  severityScore: Number,
+  description: {
+    type: String,
+    maxlength: 500
+  },
+  imageURL: {
+    type: String,
+    trim: true
+  },
+  severityScore: {
+    type: Number,
+    min: 1,
+    max: 10
+  },
   status: {
     type: String,
     default: "pending",
     enum: ["pending", "verified", "rejected"]
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
   }
-});
+}, { timestamps: true });
 
+reportSchema.index({ wellId: 1, createdAt: -1 });
+
+// 🔥 THIS LINE IS MISSING OR WRONG IN YOUR FILE
 const Report = mongoose.model("Report", reportSchema);
+
+// ✅ EXPORT AFTER DECLARATION
 export default Report;
