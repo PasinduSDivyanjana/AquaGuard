@@ -1,13 +1,10 @@
 
 import Alert from "../models/Alert.js";
 import AutoTask from "../models/AutoTask.js";
-import { Well } from "../models/Well.js";
+import { getWeatherForWell } from "./weatherService.js";
 
-// Helper: Check if weather/risk condition triggers an alert (example: high temp or rainfall)
-import { fetchWeather } from "./weatherService.js";
-
-// Example: threshold values (customize as needed)
-const TEMP_THRESHOLD = 25; // Kelvin (about 37°C)
+// Threshold values
+const TEMP_THRESHOLD = 37; // °C
 const RAINFALL_THRESHOLD = 20; // mm
 
 // Create alert only (auto task creation handled in autoTaskController)
@@ -17,16 +14,18 @@ export const createAlert = async (alertData) => {
 
 // Periodically check weather and create alert if needed (to be called by a scheduler/cron)
 export const checkWeatherAndCreateAlert = async (wellId) => {
-  const well = await Well.findById(wellId);
-  if (!well) return null;
-  const weather = await fetchWeather(well.location.lat, well.location.lng, well._id);
-  if (weather.temperature > TEMP_THRESHOLD || weather.rainfall > RAINFALL_THRESHOLD) {
-    // Create alert
+  const weatherData = await getWeatherForWell(wellId);
+  if (!weatherData) return null;
+
+  const temp = weatherData.summary.temperature;
+  const rainfall = weatherData.summary.rainfallMm;
+
+  if (temp > TEMP_THRESHOLD || rainfall > RAINFALL_THRESHOLD) {
     return await createAlert({
-      well: well._id,
+      well: weatherData.wellId,
       type: "Weather",
-      message: `Extreme weather detected: Temp ${weather.temperature} C, Rainfall ${weather.rainfall}mm`,
-      severity: weather.temperature > TEMP_THRESHOLD ? "high" : "medium",
+      message: `Extreme weather detected: Temp ${temp}°C, Rainfall ${rainfall}mm`,
+      severity: temp > TEMP_THRESHOLD ? "high" : "medium",
     });
   }
   return null;
