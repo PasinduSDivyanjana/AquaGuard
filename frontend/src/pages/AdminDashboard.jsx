@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
+import AddWell from "../components/AddWell";
 import {
   BarChart,
   Bar,
@@ -45,6 +46,16 @@ const AdminDashboard = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [usersLoading, setUsersLoading] = useState(false);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [viewUserPanel, setViewUserPanel] = useState(null);
+  const [deleteConfirm, setDeleteConfirm] = useState(null); // holds the user object to delete
+  const [addUserForm, setAddUserForm] = useState({
+    firstName: "", lastName: "", email: "", password: "",
+    nic: "", mobile: "", address: "", gender: "Male",
+    dob: "", role: "User",
+  });
+  const [addUserLoading, setAddUserLoading] = useState(false);
+  const [addUserError, setAddUserError] = useState("");
 
   // WELLS STATE
   const [allWells, setAllWells] = useState([]);
@@ -55,6 +66,7 @@ const AdminDashboard = () => {
   const [wellTotalPages, setWellTotalPages] = useState(1);
   const [wellTotal, setWellTotal] = useState(0);
   const [selectedWell, setSelectedWell] = useState(null);
+  const [showAddWellModal, setShowAddWellModal] = useState(false);
   const WELL_STATUS_OPTIONS = ["Good", "Needs Repair", "Contaminated", "Dry"];
   const WELL_STATUS_STYLES = {
     Good: { bg: "#4BDA7F", label: "Good" },
@@ -94,6 +106,26 @@ const AdminDashboard = () => {
     }
   };
 
+  // ADMIN ADD USER
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    setAddUserError("");
+    setAddUserLoading(true);
+    try {
+      await axiosInstance.post("/user/admin/create", addUserForm);
+      toast.success("User created successfully!");
+      setShowAddUserModal(false);
+      setAddUserForm({ firstName: "", lastName: "", email: "", password: "", nic: "", mobile: "", address: "", gender: "Male", dob: "", role: "User" });
+      fetchUsers();
+    } catch (err) {
+      const msg = err.response?.data?.message || "Failed to create user";
+      setAddUserError(msg);
+      toast.error(msg);
+    } finally {
+      setAddUserLoading(false);
+    }
+  };
+
   // FETCH ALL WELLS (admin)
   const fetchAllWells = async (page = 1, search = "", status = "") => {
     try {
@@ -116,16 +148,21 @@ const AdminDashboard = () => {
   };
 
   // DELETE USER
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
+  const handleDelete = (user) => {
+    setDeleteConfirm(user); // open confirmation modal
+  };
 
+  const confirmDelete = async () => {
+    if (!deleteConfirm) return;
     try {
-      await axiosInstance.delete(`/user/${id}`);
-      toast.success("User deleted");
-      setAllUsers((prev) => prev.filter((u) => u._id !== id));
-      // eslint-disable-next-line no-unused-vars
+      await axiosInstance.delete(`/user/${deleteConfirm._id}`);
+      toast.success(`${deleteConfirm.firstName} deleted successfully`);
+      setAllUsers((prev) => prev.filter((u) => u._id !== deleteConfirm._id));
+      if (viewUserPanel?._id === deleteConfirm._id) setViewUserPanel(null);
     } catch (err) {
       toast.error("Delete failed");
+    } finally {
+      setDeleteConfirm(null);
     }
   };
 
@@ -414,8 +451,8 @@ const AdminDashboard = () => {
             <button
               onClick={() => setActiveNav("dashboard")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "dashboard"
-                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                  : "text-[#9BA0A6] hover:bg-[#172431]"
+                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                : "text-[#9BA0A6] hover:bg-[#172431]"
                 }`}
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -426,8 +463,8 @@ const AdminDashboard = () => {
             <button
               onClick={() => setActiveNav("users")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "users"
-                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                  : "text-[#9BA0A6] hover:bg-[#172431]"
+                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                : "text-[#9BA0A6] hover:bg-[#172431]"
                 }`}
             >
               <svg
@@ -448,8 +485,8 @@ const AdminDashboard = () => {
             <button
               onClick={() => setActiveNav("wells")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "wells"
-                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                  : "text-[#9BA0A6] hover:bg-[#172431]"
+                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                : "text-[#9BA0A6] hover:bg-[#172431]"
                 }`}
             >
               <svg
@@ -470,8 +507,8 @@ const AdminDashboard = () => {
             <button
               onClick={() => setActiveNav("alerts")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "alerts"
-                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                  : "text-[#9BA0A6] hover:bg-[#172431]"
+                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                : "text-[#9BA0A6] hover:bg-[#172431]"
                 }`}
             >
               <svg
@@ -490,10 +527,10 @@ const AdminDashboard = () => {
               {sidebarOpen && <span>Alerts</span>}
             </button>
             <button
-              onClick={() => setActiveNav("tasks")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "tasks"
-                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                  : "text-[#9BA0A6] hover:bg-[#172431]"
+              onClick={() => setActiveNav("reports")}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "reports"
+                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                : "text-[#9BA0A6] hover:bg-[#172431]"
                 }`}
             >
               <svg
@@ -509,13 +546,13 @@ const AdminDashboard = () => {
                   d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                 />
               </svg>
-              {sidebarOpen && <span>Tasks</span>}
+              {sidebarOpen && <span>Reports</span>}
             </button>
             <button
               onClick={() => setActiveNav("settings")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "settings"
-                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                  : "text-[#9BA0A6] hover:bg-[#172431]"
+                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                : "text-[#9BA0A6] hover:bg-[#172431]"
                 }`}
             >
               <svg
@@ -581,7 +618,7 @@ const AdminDashboard = () => {
                   {activeNav === "users" && "Users Management"}
                   {activeNav === "wells" && "Wells Management"}
                   {activeNav === "alerts" && "Alerts Management"}
-                  {activeNav === "tasks" && "Tasks Management"}
+                  {activeNav === "reports" && "Reports"}
                   {activeNav === "settings" && "Settings"}
                 </h1>
                 <p className="text-[#9BA0A6] text-sm mt-1">
@@ -849,18 +886,26 @@ const AdminDashboard = () => {
           {/* USERS MANAGEMENT SECTION */}
           {activeNav === "users" && (
             <div className="bg-[#101624] rounded-xl border border-[#172431]">
-              <div className="flex justify-between items-center p-6 border-b border-[#172431]">
-                <h2 className="text-2xl font-bold text-white">
-                  Users Management
-                </h2>
-
-                <input
-                  type="text"
-                  placeholder="Search users..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-colors w-64"
-                />
+              <div className="flex flex-wrap justify-between items-center gap-3 p-6 border-b border-[#172431]">
+                <h2 className="text-2xl font-bold text-white">Users Management</h2>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-colors w-56"
+                  />
+                  <button
+                    onClick={() => { setAddUserError(""); setShowAddUserModal(true); }}
+                    className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-md whitespace-nowrap"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    Add User
+                  </button>
+                </div>
               </div>
 
               <div className="p-6">
@@ -925,14 +970,14 @@ const AdminDashboard = () => {
                             <td className="p-3 text-center">
                               <div className="flex gap-2 justify-center">
                                 <button
-                                  onClick={() => navigate(`/user/${user._id}`)}
+                                  onClick={() => setViewUserPanel(user)}
                                   className="bg-[#178B96] hover:bg-[#178B96]/80 text-white px-3 py-1 rounded-lg text-xs transition-colors"
                                 >
                                   View
                                 </button>
 
                                 <button
-                                  onClick={() => handleDelete(user._id)}
+                                  onClick={() => handleDelete(user)}
                                   className="bg-[#CA6162] hover:bg-[#CA6162]/80 text-white px-3 py-1 rounded-lg text-xs transition-colors"
                                 >
                                   Delete
@@ -966,8 +1011,8 @@ const AdminDashboard = () => {
                   <button
                     onClick={() => setSettingsSubTab("details")}
                     className={`px-6 py-3 text-center transition-colors ${settingsSubTab === "details"
-                        ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
-                        : "text-[#9BA0A6] hover:text-gray-300"
+                      ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
+                      : "text-[#9BA0A6] hover:text-gray-300"
                       }`}
                   >
                     Change User Details
@@ -975,8 +1020,8 @@ const AdminDashboard = () => {
                   <button
                     onClick={() => setSettingsSubTab("password")}
                     className={`px-6 py-3 text-center transition-colors ${settingsSubTab === "password"
-                        ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
-                        : "text-[#9BA0A6] hover:text-gray-300"
+                      ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
+                      : "text-[#9BA0A6] hover:text-gray-300"
                       }`}
                   >
                     Change Password
@@ -1160,6 +1205,24 @@ const AdminDashboard = () => {
           {/* WELLS MANAGEMENT SECTION */}
           {activeNav === "wells" && (
             <div className="space-y-6">
+
+              {/* Section header with Add Well button */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white">All Wells</h2>
+                  <p className="text-sm text-[#9BA0A6] mt-0.5">{wellTotal} wells across all users</p>
+                </div>
+                <button
+                  onClick={() => setShowAddWellModal(true)}
+                  className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Well
+                </button>
+              </div>
+
               {/* Summary stat cards */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -1242,11 +1305,10 @@ const AdminDashboard = () => {
                             <tr
                               key={w._id}
                               onClick={() => setSelectedWell(w)}
-                              className={`cursor-pointer transition-all duration-200 ${
-                                selectedWell?._id === w._id
-                                  ? "bg-[#F5BD27]/5 border-l-4 border-l-[#F5BD27]"
-                                  : "hover:bg-[#0A0E19]"
-                              }`}
+                              className={`cursor-pointer transition-all duration-200 ${selectedWell?._id === w._id
+                                ? "bg-[#F5BD27]/5 border-l-4 border-l-[#F5BD27]"
+                                : "hover:bg-[#0A0E19]"
+                                }`}
                             >
                               <td className="px-5 py-4">
                                 <div className="font-semibold text-white">{w.name}</div>
@@ -1459,11 +1521,46 @@ const AdminDashboard = () => {
             );
           })()}
 
+          {/* REPORTS SECTION */}
+          {activeNav === "reports" && (
+            <div className="space-y-6">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Reports</h2>
+                  <p className="text-sm text-[#9BA0A6] mt-0.5">Manage and view all submitted reports</p>
+                </div>
+                <button
+                  onClick={() => {/* TODO: open add report modal */}}
+                  className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Report
+                </button>
+              </div>
+
+              {/* Placeholder content */}
+              <div className="bg-[#101624] rounded-xl border border-[#172431] p-16 text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F5BD27]/10 border border-[#F5BD27]/20 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-[#F5BD27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-white font-semibold mb-1">No reports yet</p>
+                <p className="text-[#9BA0A6] text-sm">Reports functionality coming soon. Use the Add Report button to get started.</p>
+              </div>
+            </div>
+          )}
+
           {/* Placeholder for other nav items */}
           {activeNav !== "dashboard" &&
             activeNav !== "settings" &&
             activeNav !== "users" &&
-            activeNav !== "wells" && (
+            activeNav !== "wells" &&
+            activeNav !== "reports" && (
               <div className="bg-[#101624] rounded-xl border border-[#172431] p-6">
                 <h2 className="text-2xl font-bold text-white mb-4">
                   {activeNav.charAt(0).toUpperCase() + activeNav.slice(1)}{" "}
@@ -1476,6 +1573,299 @@ const AdminDashboard = () => {
             )}
         </div>
       </main>
+
+      {/* Delete User Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+          <div
+            className="bg-[#101624] rounded-2xl border border-[#172431] shadow-2xl w-full max-w-sm overflow-hidden"
+            style={{ animation: "fadeScaleIn 0.2s ease-out" }}
+          >
+            {/* Red accent top bar */}
+            <div className="h-1 w-full bg-gradient-to-r from-[#CA6162] to-[#e07c7c]" />
+
+            <div className="p-6">
+              {/* Warning icon */}
+              <div className="flex items-center justify-center mb-4">
+                <div className="w-14 h-14 rounded-full bg-[#CA6162]/10 border border-[#CA6162]/20 flex items-center justify-center">
+                  <svg className="w-7 h-7 text-[#CA6162]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Text */}
+              <h3 className="text-lg font-bold text-white text-center mb-1">Delete User</h3>
+              <p className="text-[#9BA0A6] text-sm text-center mb-1">
+                Are you sure you want to delete
+              </p>
+              <p className="text-white font-semibold text-center mb-4">
+                {deleteConfirm.firstName} {deleteConfirm.lastName}
+              </p>
+              <p className="text-xs text-[#6B7280] text-center mb-6">
+                This action cannot be undone. All data associated with this account will be permanently removed.
+              </p>
+
+              {/* Buttons */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-4 py-2.5 bg-[#172431] hover:bg-[#1a2a3a] text-white font-medium rounded-xl transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 px-4 py-2.5 bg-[#CA6162] hover:bg-[#b85555] text-white font-semibold rounded-xl transition-all duration-200"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+          </div>
+          <style>{`
+            @keyframes fadeScaleIn {
+              from { opacity: 0; transform: scale(0.93); }
+              to   { opacity: 1; transform: scale(1); }
+            }
+          `}</style>
+        </div>
+      )}
+
+      {/* User Detail Slide-Over Panel */}
+      {viewUserPanel && (() => {
+        const u = viewUserPanel;
+        const ROLE_COLORS = {
+          Admin: { bg: "#F5BD27", label: "Admin" },
+          User: { bg: "#178B96", label: "User" },
+          Villager: { bg: "#4BDA7F", label: "Villager" },
+          Reporter: { bg: "#A38F7A", label: "Reporter" },
+        };
+        const roleStyle = ROLE_COLORS[u.role] || ROLE_COLORS.User;
+        return (
+          <>
+            {/* Backdrop */}
+            {/* Panel */}
+            <div
+              className="fixed top-0 right-0 h-full w-full max-w-md bg-[#101624] border-l border-[#172431] z-50 flex flex-col shadow-2xl overflow-hidden"
+              style={{ animation: "slideInRight 0.25s ease-out" }}
+            >
+              {/* Header */}
+              <div className="flex items-start justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-1">User Details</p>
+                  <h2 className="text-xl font-bold text-white truncate">
+                    {u.firstName} {u.lastName}
+                  </h2>
+                  <p className="text-xs text-[#6B7280] font-mono mt-0.5">ID: {u._id}</p>
+                </div>
+                <button
+                  onClick={() => setViewUserPanel(null)}
+                  className="ml-4 p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors flex-shrink-0"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              {/* Scrollable body */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-5">
+
+                {/* Avatar + role */}
+                <div className="flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-2xl flex-shrink-0">
+                    {u.firstName?.charAt(0) || "?"}
+                  </div>
+                  <div>
+                    <p className="text-white font-semibold text-lg">{u.firstName} {u.lastName}</p>
+                    <span
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mt-1"
+                      style={{ backgroundColor: `${roleStyle.bg}20`, color: roleStyle.bg, border: `1px solid ${roleStyle.bg}40` }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: roleStyle.bg }} />
+                      {u.role}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Contact info */}
+                <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4 space-y-0">
+                  <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Contact Information</p>
+                  {[
+                    { label: "Email", value: u.email || "—" },
+                    { label: "Mobile", value: u.mobile || "—" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex items-center justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0">
+                      <span className="text-sm text-[#9BA0A6]">{label}</span>
+                      <span className="text-sm text-white font-mono break-all text-right">{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Personal details */}
+                <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                  <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Personal Details</p>
+                  {[
+                    { label: "NIC", value: u.nic || "—" },
+                    { label: "Gender", value: u.gender || "—" },
+                    { label: "Date of Birth", value: u.dob ? new Date(u.dob).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—" },
+                    { label: "Address", value: u.address || "—" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex items-start justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0">
+                      <span className="text-sm text-[#9BA0A6] flex-shrink-0">{label}</span>
+                      <span className="text-sm text-white text-right">{value}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Account info */}
+                <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                  <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Account</p>
+                  {[
+                    { label: "User ID", value: u.userId || u._id?.slice(-8) },
+                    { label: "Verified", value: u.isVerified ? "✓ Verified" : "✗ Not verified" },
+                    { label: "Joined", value: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—" },
+                  ].map(({ label, value }) => (
+                    <div key={label} className="flex items-center justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0">
+                      <span className="text-sm text-[#9BA0A6]">{label}</span>
+                      <span className={`text-sm font-mono ${label === "Verified"
+                        ? u.isVerified ? "text-[#4BDA7F]" : "text-[#CA6162]"
+                        : "text-white"
+                        }`}>{value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <style>{`
+              @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to   { transform: translateX(0);    opacity: 1; }
+              }
+            `}</style>
+          </>
+        );
+      })()}
+
+      {/* Add User Modal */}
+      {showAddUserModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
+          <div className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-[#101624] rounded-2xl border border-[#172431] shadow-2xl overflow-hidden">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
+                <div>
+                  <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-0.5">Admin</p>
+                  <h2 className="text-xl font-bold text-white">Add New User</h2>
+                </div>
+                <button onClick={() => setShowAddUserModal(false)} className="p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              {/* Form */}
+              <form onSubmit={handleAddUser} className="p-6 space-y-5">
+                {addUserError && (
+                  <div className="bg-[#CA6162]/10 border-l-4 border-[#CA6162] px-4 py-3 rounded-lg">
+                    <p className="text-[#CA6162] text-sm">{addUserError}</p>
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { label: "First Name", name: "firstName", type: "text", placeholder: "John" },
+                    { label: "Last Name", name: "lastName", type: "text", placeholder: "Doe" },
+                    { label: "Email", name: "email", type: "email", placeholder: "user@example.com" },
+                    { label: "Password", name: "password", type: "password", placeholder: "Min. 6 characters" },
+                    { label: "NIC", name: "nic", type: "text", placeholder: "e.g. 990001234V" },
+                    { label: "Mobile", name: "mobile", type: "text", placeholder: "e.g. +94771234567" },
+                  ].map(({ label, name, type, placeholder }) => (
+                    <div key={name}>
+                      <label className="block text-xs font-medium text-[#9BA0A6] mb-1">{label} *</label>
+                      <input
+                        type={type} required
+                        minLength={name === "password" ? 6 : undefined}
+                        value={addUserForm[name]}
+                        onChange={(e) => setAddUserForm(f => ({ ...f, [name]: e.target.value }))}
+                        placeholder={placeholder}
+                        className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-all"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-[#9BA0A6] mb-1">Gender *</label>
+                    <select required value={addUserForm.gender} onChange={(e) => setAddUserForm(f => ({ ...f, gender: e.target.value }))}
+                      className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer">
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-[#9BA0A6] mb-1">Date of Birth *</label>
+                    <input type="date" required value={addUserForm.dob}
+                      onChange={(e) => setAddUserForm(f => ({ ...f, dob: e.target.value }))}
+                      className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white focus:outline-none focus:border-[#F5BD27] transition-all" />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#9BA0A6] mb-1">Address *</label>
+                  <textarea required rows={2} value={addUserForm.address}
+                    onChange={(e) => setAddUserForm(f => ({ ...f, address: e.target.value }))}
+                    placeholder="Full address..."
+                    className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] transition-all resize-none" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-[#9BA0A6] mb-2">Role</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {["User", "Admin", "Villager", "Reporter"].map((r) => (
+                      <button key={r} type="button" onClick={() => setAddUserForm(f => ({ ...f, role: r }))}
+                        className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${addUserForm.role === r
+                          ? "bg-[#F5BD27] border-[#F5BD27] text-[#0A0E19]"
+                          : "bg-[#0A0E19] border-[#172431] text-[#9BA0A6] hover:border-[#F5BD27]"
+                          }`}>{r}</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button type="submit" disabled={addUserLoading}
+                    className="flex-1 bg-gradient-to-r from-[#F5BD27] to-[#E6C27A] hover:from-[#E6C27A] hover:to-[#F5BD27] text-[#0A0E19] font-semibold px-6 py-2.5 rounded-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed">
+                    {addUserLoading ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <span className="w-4 h-4 border-2 border-[#0A0E19] border-t-transparent rounded-full animate-spin" />
+                        Creating...
+                      </span>
+                    ) : "Create User"}
+                  </button>
+                  <button type="button" onClick={() => setShowAddUserModal(false)}
+                    className="px-6 py-2.5 bg-[#172431] hover:bg-[#1a2a3a] text-white font-medium rounded-xl transition-all">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Well Modal */}
+      {showAddWellModal && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
+          <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+            <AddWell
+              onSuccess={() => {
+                setShowAddWellModal(false);
+                fetchAllWells(wellPage, wellSearch, wellStatus);
+              }}
+              onCancel={() => setShowAddWellModal(false)}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (

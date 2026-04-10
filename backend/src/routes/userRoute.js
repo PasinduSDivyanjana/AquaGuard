@@ -7,6 +7,7 @@ import {
   deleteUser,
   verifyRegistrationOTP,
   getProfile,
+  adminCreateUser,
 } from "../controllers/userController.js";
 import {
   loginUser,
@@ -27,6 +28,7 @@ router.post("/forgot-password", forgotPassword); // Forgot password — send OTP
 router.post("/reset-password", resetPassword); // Reset password — using OTP or token
 
 router.get("/", getAllUsers); // Get all users (Admin only)
+router.post("/admin/create", protect, adminCreateUser); // Admin-create pre-verified user
 router.get("/profile", protect, getProfile); // Get logged-in user's profile
 router.get("/:id", protect, getUserByID); // Get user by ID (Admin or self)
 

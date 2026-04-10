@@ -206,9 +206,9 @@ const UserDashboard = () => {
             </button>
 
             <button
-              onClick={() => setActiveTab("btn2")}
+              onClick={() => setActiveTab("reports")}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
-                activeTab === "btn2"
+                activeTab === "reports"
                   ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
                   : "text-[#9BA0A6] hover:bg-[#172431]"
               }`}
@@ -226,7 +226,7 @@ const UserDashboard = () => {
                   d="M12 6v6m0 0v6m0-6h6m-6 0H6"
                 />
               </svg>
-              {sidebarOpen && <span>Button 2</span>}
+              {sidebarOpen && <span>Reports</span>}
             </button>
 
             <button
@@ -299,7 +299,7 @@ const UserDashboard = () => {
                 <h1 className="text-2xl font-bold text-white">
                   {activeTab === "profile" && "Profile"}
                   {activeTab === "well" && "Well Management"}
-                  {activeTab === "btn2" && "Button 2"}
+                  {activeTab === "reports" && "Reports"}
                   {activeTab === "settings" && "Settings"}
                 </h1>
                 <p className="text-[#9BA0A6] text-sm mt-1">
@@ -432,13 +432,34 @@ const UserDashboard = () => {
             </div>
           )}
 
-          {/* Button 2 Page */}
-          {activeTab === "btn2" && (
+          {/* Reports Page */}
+          {activeTab === "reports" && (
             <div className="bg-[#101624] rounded-xl border border-[#172431] p-6">
-              <h2 className="text-2xl font-bold text-white mb-4">
-                Button 2 Page
-              </h2>
-              <p className="text-[#9BA0A6]">Content for Button 2 goes here.</p>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold text-white">Reports</h2>
+                  <p className="text-[#9BA0A6] text-sm mt-1">View and submit your reports</p>
+                </div>
+                <button
+                  onClick={() => {/* TODO: add report functionality */}}
+                  className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 hover:scale-105 shadow-lg"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                  Add Report
+                </button>
+              </div>
+              <div className="text-center py-12">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F5BD27]/10 border border-[#F5BD27]/20 flex items-center justify-center">
+                  <svg className="w-8 h-8 text-[#F5BD27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
+                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <p className="text-white font-semibold mb-1">No reports yet</p>
+                <p className="text-[#9BA0A6] text-sm">Your submitted reports will appear here.</p>
+              </div>
             </div>
           )}
 

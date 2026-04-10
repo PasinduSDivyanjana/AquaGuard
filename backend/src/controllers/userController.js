@@ -67,6 +67,72 @@ export const createUser = async (req, res) => {
   }
 };
 
+// ✅ Admin Create User (bypasses OTP — creates pre-verified user)
+export const adminCreateUser = async (req, res) => {
+  try {
+    const {
+      firstName,
+      lastName,
+      email,
+      password,
+      nic,
+      mobile,
+      address,
+      gender,
+      dob,
+      role,
+    } = req.body;
+
+    if (!firstName || !lastName || !email || !password || !nic || !mobile || !address || !gender || !dob) {
+      return res.status(400).json({
+        success: false,
+        message: "All fields are required",
+      });
+    }
+
+    const existingUser = await User.findOne({ $or: [{ email }, { nic }] });
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: existingUser.email === email ? "Email already in use" : "NIC already in use",
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = await User.create({
+      firstName,
+      lastName,
+      email,
+      password: hashedPassword,
+      nic,
+      mobile,
+      address,
+      gender,
+      dob,
+      role: role || "User",
+      termsAccepted: true,
+      isVerified: true,      // admin-created users are pre-verified
+    });
+
+    const { password: _pw, ...userWithoutPassword } = user._doc;
+
+    return res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      data: userWithoutPassword,
+    });
+  } catch (error) {
+    console.error("ADMIN CREATE USER ERROR:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+
 //OTP Generator
 const generateOTP = () => {
   return Math.floor(100000 + Math.random() * 900000).toString();
