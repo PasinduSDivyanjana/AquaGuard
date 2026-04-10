@@ -2,7 +2,7 @@ import severityCalculator from "../utils/severityCalculator.js";
 import User from "../models/User.js";
 import Well from "../models/Well.js";
 import Report from "../models/Report.js";
-import cloudinary from "../config/cloudinary.js";
+import { cloudinary } from "../config/cloudinary.js";
 import {
   createReportService,
   getAllReportsService,

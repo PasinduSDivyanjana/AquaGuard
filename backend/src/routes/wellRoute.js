@@ -25,6 +25,11 @@ import {
 const router = Router();
 
 /**
+ * @section Public routes (NO auth required)
+ * Must be registered BEFORE router.use(protect)
+ */
+
+/**
  * @section Auth Protection
  * All routes below this point require a valid JWT
  */

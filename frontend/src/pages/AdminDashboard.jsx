@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axiosInstance from "../utils/axiosInstance";
 import toast from "react-hot-toast";
 import AddWell from "../components/AddWell";
+import { fetchReports } from "../api/reportApi";
 import {
   BarChart,
   Bar,
@@ -42,6 +43,37 @@ const AdminDashboard = () => {
   const [activeNav, setActiveNav] = useState("dashboard");
   const [settingsSubTab, setSettingsSubTab] = useState("details");
 
+  // REPORTS STATE
+  const [reports, setReports] = useState([]);
+  const [reportsLoading, setReportsLoading] = useState(false);
+  const [filterStatus, setFilterStatus] = useState("");
+  const [filterCondition, setFilterCondition] = useState("");
+  const [selectedReport, setSelectedReport] = useState(null);
+
+  // FETCH ALL REPORTS (admin)
+  const fetchAllReports = async () => {
+    try {
+      setReportsLoading(true);
+      const query = {};
+      if (filterStatus) query.status = filterStatus;
+      if (filterCondition) query.conditionType = filterCondition;
+      const res = await fetchReports(query);
+      setReports(res.data || []);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch reports");
+    } finally {
+      setReportsLoading(false);
+    }
+  };
+
+  // Fetch reports when reports nav is active or filters change
+  useEffect(() => {
+    if (activeNav === "reports") {
+      fetchAllReports();
+    }
+  }, [activeNav, filterStatus, filterCondition]);
+
   // USERS STATE
   const [allUsers, setAllUsers] = useState([]);
   const [search, setSearch] = useState("");
@@ -50,9 +82,16 @@ const AdminDashboard = () => {
   const [viewUserPanel, setViewUserPanel] = useState(null);
   const [deleteConfirm, setDeleteConfirm] = useState(null); // holds the user object to delete
   const [addUserForm, setAddUserForm] = useState({
-    firstName: "", lastName: "", email: "", password: "",
-    nic: "", mobile: "", address: "", gender: "Male",
-    dob: "", role: "User",
+    firstName: "",
+    lastName: "",
+    email: "",
+    password: "",
+    nic: "",
+    mobile: "",
+    address: "",
+    gender: "Male",
+    dob: "",
+    role: "User",
   });
   const [addUserLoading, setAddUserLoading] = useState(false);
   const [addUserError, setAddUserError] = useState("");
@@ -115,7 +154,18 @@ const AdminDashboard = () => {
       await axiosInstance.post("/user/admin/create", addUserForm);
       toast.success("User created successfully!");
       setShowAddUserModal(false);
-      setAddUserForm({ firstName: "", lastName: "", email: "", password: "", nic: "", mobile: "", address: "", gender: "Male", dob: "", role: "User" });
+      setAddUserForm({
+        firstName: "",
+        lastName: "",
+        email: "",
+        password: "",
+        nic: "",
+        mobile: "",
+        address: "",
+        gender: "Male",
+        dob: "",
+        role: "User",
+      });
       fetchUsers();
     } catch (err) {
       const msg = err.response?.data?.message || "Failed to create user";
@@ -415,8 +465,9 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-gradient-to-br from-[#0A0E19] to-[#101624]">
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-full bg-[#101624] border-r border-[#172431] transition-all duration-300 z-20 ${sidebarOpen ? "w-64" : "w-20"
-          }`}
+        className={`fixed top-0 left-0 h-full bg-[#101624] border-r border-[#172431] transition-all duration-300 z-20 ${
+          sidebarOpen ? "w-64" : "w-20"
+        }`}
       >
         <div className="flex flex-col h-full">
           {/* Logo */}
@@ -450,10 +501,11 @@ const AdminDashboard = () => {
           <nav className="flex-1 p-4 space-y-2">
             <button
               onClick={() => setActiveNav("dashboard")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "dashboard"
-                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                : "text-[#9BA0A6] hover:bg-[#172431]"
-                }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                activeNav === "dashboard"
+                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                  : "text-[#9BA0A6] hover:bg-[#172431]"
+              }`}
             >
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z" />
@@ -462,10 +514,11 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("users")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "users"
-                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                : "text-[#9BA0A6] hover:bg-[#172431]"
-                }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                activeNav === "users"
+                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                  : "text-[#9BA0A6] hover:bg-[#172431]"
+              }`}
             >
               <svg
                 className="w-5 h-5"
@@ -484,10 +537,11 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("wells")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "wells"
-                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                : "text-[#9BA0A6] hover:bg-[#172431]"
-                }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                activeNav === "wells"
+                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                  : "text-[#9BA0A6] hover:bg-[#172431]"
+              }`}
             >
               <svg
                 className="w-5 h-5"
@@ -506,10 +560,11 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("alerts")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "alerts"
-                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                : "text-[#9BA0A6] hover:bg-[#172431]"
-                }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                activeNav === "alerts"
+                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                  : "text-[#9BA0A6] hover:bg-[#172431]"
+              }`}
             >
               <svg
                 className="w-5 h-5"
@@ -528,10 +583,11 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("reports")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "reports"
-                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                : "text-[#9BA0A6] hover:bg-[#172431]"
-                }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                activeNav === "reports"
+                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                  : "text-[#9BA0A6] hover:bg-[#172431]"
+              }`}
             >
               <svg
                 className="w-5 h-5"
@@ -550,10 +606,11 @@ const AdminDashboard = () => {
             </button>
             <button
               onClick={() => setActiveNav("settings")}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${activeNav === "settings"
-                ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
-                : "text-[#9BA0A6] hover:bg-[#172431]"
-                }`}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-300 ${
+                activeNav === "settings"
+                  ? "bg-[#F5BD27]/10 text-[#F5BD27] border border-[#F5BD27]/20"
+                  : "text-[#9BA0A6] hover:bg-[#172431]"
+              }`}
             >
               <svg
                 className="w-5 h-5"
@@ -605,8 +662,9 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main
-        className={`transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"
-          }`}
+        className={`transition-all duration-300 ${
+          sidebarOpen ? "ml-64" : "ml-20"
+        }`}
       >
         {/* Header */}
         <header className="bg-[#101624]/50 backdrop-blur-sm border-b border-[#172431] sticky top-0 z-10">
@@ -709,8 +767,8 @@ const AdminDashboard = () => {
                       trend={
                         stats.activeWells > 0
                           ? `+${Math.round(
-                            (stats.activeWells / stats.totalWells) * 100
-                          )}%`
+                              (stats.activeWells / stats.totalWells) * 100
+                            )}%`
                           : null
                       }
                     />
@@ -887,7 +945,9 @@ const AdminDashboard = () => {
           {activeNav === "users" && (
             <div className="bg-[#101624] rounded-xl border border-[#172431]">
               <div className="flex flex-wrap justify-between items-center gap-3 p-6 border-b border-[#172431]">
-                <h2 className="text-2xl font-bold text-white">Users Management</h2>
+                <h2 className="text-2xl font-bold text-white">
+                  Users Management
+                </h2>
                 <div className="flex items-center gap-3">
                   <input
                     type="text"
@@ -897,11 +957,24 @@ const AdminDashboard = () => {
                     className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-colors w-56"
                   />
                   <button
-                    onClick={() => { setAddUserError(""); setShowAddUserModal(true); }}
+                    onClick={() => {
+                      setAddUserError("");
+                      setShowAddUserModal(true);
+                    }}
                     className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-4 py-2 rounded-lg transition-all duration-300 hover:scale-105 shadow-md whitespace-nowrap"
                   >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 4v16m8-8H4"
+                      />
                     </svg>
                     Add User
                   </button>
@@ -956,9 +1029,17 @@ const AdminDashboard = () => {
                             <td className="p-3 text-center">
                               <select
                                 value={user.role || "User"}
-                                onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                                onChange={(e) =>
+                                  handleRoleChange(user._id, e.target.value)
+                                }
                                 className="bg-[#0A0E19] border border-[#172431] text-[#F5BD27] text-xs font-medium px-2 py-1 rounded-lg focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-colors cursor-pointer appearance-none"
-                                style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23F5BD27'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")", backgroundRepeat: "no-repeat", backgroundPosition: "right 6px center", paddingRight: "22px" }}
+                                style={{
+                                  backgroundImage:
+                                    "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='%23F5BD27'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E\")",
+                                  backgroundRepeat: "no-repeat",
+                                  backgroundPosition: "right 6px center",
+                                  paddingRight: "22px",
+                                }}
                               >
                                 <option value="User">User</option>
                                 <option value="Admin">Admin</option>
@@ -1010,19 +1091,21 @@ const AdminDashboard = () => {
                 <div className="flex border-b border-[#172431] bg-[#0A0E19]">
                   <button
                     onClick={() => setSettingsSubTab("details")}
-                    className={`px-6 py-3 text-center transition-colors ${settingsSubTab === "details"
-                      ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
-                      : "text-[#9BA0A6] hover:text-gray-300"
-                      }`}
+                    className={`px-6 py-3 text-center transition-colors ${
+                      settingsSubTab === "details"
+                        ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
+                        : "text-[#9BA0A6] hover:text-gray-300"
+                    }`}
                   >
                     Change User Details
                   </button>
                   <button
                     onClick={() => setSettingsSubTab("password")}
-                    className={`px-6 py-3 text-center transition-colors ${settingsSubTab === "password"
-                      ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
-                      : "text-[#9BA0A6] hover:text-gray-300"
-                      }`}
+                    className={`px-6 py-3 text-center transition-colors ${
+                      settingsSubTab === "password"
+                        ? "border-b-2 border-[#F5BD27] text-[#F5BD27]"
+                        : "text-[#9BA0A6] hover:text-gray-300"
+                    }`}
                   >
                     Change Password
                   </button>
@@ -1205,19 +1288,30 @@ const AdminDashboard = () => {
           {/* WELLS MANAGEMENT SECTION */}
           {activeNav === "wells" && (
             <div className="space-y-6">
-
               {/* Section header with Add Well button */}
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-xl font-bold text-white">All Wells</h2>
-                  <p className="text-sm text-[#9BA0A6] mt-0.5">{wellTotal} wells across all users</p>
+                  <p className="text-sm text-[#9BA0A6] mt-0.5">
+                    {wellTotal} wells across all users
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowAddWellModal(true)}
                   className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
                   Add Well
                 </button>
@@ -1227,13 +1321,38 @@ const AdminDashboard = () => {
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                   { label: "Total Wells", value: wellTotal, color: "#F5BD27" },
-                  { label: "Good", value: allWells.filter(w => w.status === "Good").length, color: "#4BDA7F" },
-                  { label: "Needs Repair", value: allWells.filter(w => w.status === "Needs Repair").length, color: "#F5BD27" },
-                  { label: "Contaminated / Dry", value: allWells.filter(w => w.status === "Contaminated" || w.status === "Dry").length, color: "#CA6162" },
+                  {
+                    label: "Good",
+                    value: allWells.filter((w) => w.status === "Good").length,
+                    color: "#4BDA7F",
+                  },
+                  {
+                    label: "Needs Repair",
+                    value: allWells.filter((w) => w.status === "Needs Repair")
+                      .length,
+                    color: "#F5BD27",
+                  },
+                  {
+                    label: "Contaminated / Dry",
+                    value: allWells.filter(
+                      (w) => w.status === "Contaminated" || w.status === "Dry"
+                    ).length,
+                    color: "#CA6162",
+                  },
                 ].map((s) => (
-                  <div key={s.label} className="bg-[#101624] rounded-xl border border-[#172431] p-5">
-                    <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-1">{s.label}</p>
-                    <p className="text-2xl font-bold" style={{ color: s.color }}>{s.value}</p>
+                  <div
+                    key={s.label}
+                    className="bg-[#101624] rounded-xl border border-[#172431] p-5"
+                  >
+                    <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-1">
+                      {s.label}
+                    </p>
+                    <p
+                      className="text-2xl font-bold"
+                      style={{ color: s.color }}
+                    >
+                      {s.value}
+                    </p>
                   </div>
                 ))}
               </div>
@@ -1246,7 +1365,10 @@ const AdminDashboard = () => {
                     placeholder="🔍 Search by well name..."
                     value={wellSearch}
                     onChange={(e) => setWellSearch(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && fetchAllWells(1, wellSearch, wellStatus)}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" &&
+                      fetchAllWells(1, wellSearch, wellStatus)
+                    }
                     className="flex-1 min-w-[200px] px-4 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-all"
                   />
                   <select
@@ -1259,7 +1381,9 @@ const AdminDashboard = () => {
                   >
                     <option value="">All Statuses</option>
                     {WELL_STATUS_OPTIONS.map((s) => (
-                      <option key={s} value={s}>{s}</option>
+                      <option key={s} value={s}>
+                        {s}
+                      </option>
                     ))}
                   </select>
                   <button
@@ -1282,8 +1406,18 @@ const AdminDashboard = () => {
                   </div>
                 ) : allWells.length === 0 ? (
                   <div className="text-center py-16">
-                    <svg className="w-16 h-16 mx-auto text-[#6B7280] mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    <svg
+                      className="w-16 h-16 mx-auto text-[#6B7280] mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                      />
                     </svg>
                     <p className="text-[#9BA0A6]">No wells found</p>
                   </div>
@@ -1292,45 +1426,76 @@ const AdminDashboard = () => {
                     <table className="w-full text-sm">
                       <thead className="bg-[#0A0E19] border-b border-[#172431]">
                         <tr>
-                          {["Well Name", "Owner", "Location", "Status", "Photos", "Last Inspected", "Created"].map((h) => (
-                            <th key={h} className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider whitespace-nowrap">{h}</th>
+                          {[
+                            "Well Name",
+                            "Owner",
+                            "Location",
+                            "Status",
+                            "Photos",
+                            "Last Inspected",
+                            "Created",
+                          ].map((h) => (
+                            <th
+                              key={h}
+                              className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider whitespace-nowrap"
+                            >
+                              {h}
+                            </th>
                           ))}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#172431]">
                         {allWells.map((w) => {
-                          const style = WELL_STATUS_STYLES[w.status] || WELL_STATUS_STYLES.Dry;
+                          const style =
+                            WELL_STATUS_STYLES[w.status] ||
+                            WELL_STATUS_STYLES.Dry;
                           const owner = w.user;
                           return (
                             <tr
                               key={w._id}
                               onClick={() => setSelectedWell(w)}
-                              className={`cursor-pointer transition-all duration-200 ${selectedWell?._id === w._id
-                                ? "bg-[#F5BD27]/5 border-l-4 border-l-[#F5BD27]"
-                                : "hover:bg-[#0A0E19]"
-                                }`}
+                              className={`cursor-pointer transition-all duration-200 ${
+                                selectedWell?._id === w._id
+                                  ? "bg-[#F5BD27]/5 border-l-4 border-l-[#F5BD27]"
+                                  : "hover:bg-[#0A0E19]"
+                              }`}
                             >
                               <td className="px-5 py-4">
-                                <div className="font-semibold text-white">{w.name}</div>
-                                <div className="text-xs text-[#6B7280] mt-0.5 font-mono">{w._id.slice(-8)}</div>
+                                <div className="font-semibold text-white">
+                                  {w.name}
+                                </div>
+                                <div className="text-xs text-[#6B7280] mt-0.5 font-mono">
+                                  {w._id.slice(-8)}
+                                </div>
                               </td>
                               <td className="px-5 py-4">
                                 {owner ? (
                                   <div>
-                                    <div className="text-white text-sm">{owner.firstName} {owner.lastName}</div>
-                                    <div className="text-xs text-[#6B7280]">{owner.email}</div>
+                                    <div className="text-white text-sm">
+                                      {owner.firstName} {owner.lastName}
+                                    </div>
+                                    <div className="text-xs text-[#6B7280]">
+                                      {owner.email}
+                                    </div>
                                   </div>
                                 ) : (
-                                  <span className="text-[#6B7280] text-xs">Unknown</span>
+                                  <span className="text-[#6B7280] text-xs">
+                                    Unknown
+                                  </span>
                                 )}
                               </td>
                               <td className="px-5 py-4 font-mono text-xs text-[#9BA0A6] whitespace-nowrap">
-                                {w.location?.lat?.toFixed(4)}°, {w.location?.lng?.toFixed(4)}°
+                                {w.location?.lat?.toFixed(4)}°,{" "}
+                                {w.location?.lng?.toFixed(4)}°
                               </td>
                               <td className="px-5 py-4">
                                 <span
                                   className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap"
-                                  style={{ backgroundColor: `${style.bg}18`, color: style.bg, border: `1px solid ${style.bg}30` }}
+                                  style={{
+                                    backgroundColor: `${style.bg}18`,
+                                    color: style.bg,
+                                    border: `1px solid ${style.bg}30`,
+                                  }}
                                 >
                                   {w.status}
                                 </span>
@@ -1339,9 +1504,13 @@ const AdminDashboard = () => {
                                 {w.photos?.length || 0}
                               </td>
                               <td className="px-5 py-4 text-[#9BA0A6] whitespace-nowrap">
-                                {w.lastInspected
-                                  ? new Date(w.lastInspected).toLocaleDateString()
-                                  : <span className="text-[#6B7280] italic text-xs">Not inspected</span>}
+                                {w.lastInspected ? (
+                                  new Date(w.lastInspected).toLocaleDateString()
+                                ) : (
+                                  <span className="text-[#6B7280] italic text-xs">
+                                    Not inspected
+                                  </span>
+                                )}
                               </td>
                               <td className="px-5 py-4 text-[#9BA0A6] whitespace-nowrap">
                                 {new Date(w.createdAt).toLocaleDateString()}
@@ -1358,18 +1527,33 @@ const AdminDashboard = () => {
               {/* Pagination */}
               {wellTotalPages > 1 && (
                 <div className="flex items-center justify-between bg-[#0A0E19] rounded-xl border border-[#172431] px-5 py-3">
-                  <span className="text-sm text-[#9BA0A6]">Page {wellPage} of {wellTotalPages} &nbsp;·&nbsp; {wellTotal} wells total</span>
+                  <span className="text-sm text-[#9BA0A6]">
+                    Page {wellPage} of {wellTotalPages} &nbsp;·&nbsp;{" "}
+                    {wellTotal} wells total
+                  </span>
                   <div className="flex gap-2">
                     <button
                       disabled={wellPage <= 1}
-                      onClick={() => { const p = wellPage - 1; setWellPage(p); fetchAllWells(p, wellSearch, wellStatus); }}
+                      onClick={() => {
+                        const p = wellPage - 1;
+                        setWellPage(p);
+                        fetchAllWells(p, wellSearch, wellStatus);
+                      }}
                       className="px-4 py-2 bg-[#101624] text-[#9BA0A6] rounded-lg hover:bg-[#172431] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >Previous</button>
+                    >
+                      Previous
+                    </button>
                     <button
                       disabled={wellPage >= wellTotalPages}
-                      onClick={() => { const p = wellPage + 1; setWellPage(p); fetchAllWells(p, wellSearch, wellStatus); }}
+                      onClick={() => {
+                        const p = wellPage + 1;
+                        setWellPage(p);
+                        fetchAllWells(p, wellSearch, wellStatus);
+                      }}
                       className="px-4 py-2 bg-[#101624] text-[#9BA0A6] rounded-lg hover:bg-[#172431] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >Next</button>
+                    >
+                      Next
+                    </button>
                   </div>
                 </div>
               )}
@@ -1377,181 +1561,847 @@ const AdminDashboard = () => {
           )}
 
           {/* WELL DETAIL SLIDE-OVER MODAL */}
-          {selectedWell && (() => {
-            const w = selectedWell;
-            const style = WELL_STATUS_STYLES[w.status] || WELL_STATUS_STYLES.Dry;
-            const owner = w.user;
-            const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
-            const photoUrl = (url) => url?.startsWith("http") ? url : `${API_URL}${url}`;
-            return (
-              <>
-                {/* Backdrop */}
-                <div
-                  className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                  onClick={() => setSelectedWell(null)}
-                />
-                {/* Panel */}
-                <div className="fixed top-0 right-0 h-full w-full max-w-md bg-[#101624] border-l border-[#172431] z-50 flex flex-col shadow-2xl overflow-hidden animate-slide-in-right"
-                  style={{ animation: "slideInRight 0.25s ease-out" }}
-                >
-                  {/* Header */}
-                  <div className="flex items-start justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-1">Well Details</p>
-                      <h2 className="text-xl font-bold text-white truncate">{w.name}</h2>
-                      <p className="text-xs text-[#6B7280] font-mono mt-0.5">ID: {w._id}</p>
-                    </div>
-                    <button
-                      onClick={() => setSelectedWell(null)}
-                      className="ml-4 p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors flex-shrink-0"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Scrollable body */}
-                  <div className="flex-1 overflow-y-auto p-6 space-y-5">
-
-                    {/* Status badge */}
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
-                        style={{ backgroundColor: `${style.bg}20`, color: style.bg, border: `1px solid ${style.bg}40` }}
+          {selectedWell &&
+            (() => {
+              const w = selectedWell;
+              const style =
+                WELL_STATUS_STYLES[w.status] || WELL_STATUS_STYLES.Dry;
+              const owner = w.user;
+              const API_URL =
+                import.meta.env.VITE_API_URL || "http://localhost:5001";
+              const photoUrl = (url) =>
+                url?.startsWith("http") ? url : `${API_URL}${url}`;
+              return (
+                <>
+                  {/* Backdrop */}
+                  <div
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                    onClick={() => setSelectedWell(null)}
+                  />
+                  {/* Panel */}
+                  <div
+                    className="fixed top-0 right-0 h-full w-full max-w-md bg-[#101624] border-l border-[#172431] z-50 flex flex-col shadow-2xl overflow-hidden animate-slide-in-right"
+                    style={{ animation: "slideInRight 0.25s ease-out" }}
+                  >
+                    {/* Header */}
+                    <div className="flex items-start justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-1">
+                          Well Details
+                        </p>
+                        <h2 className="text-xl font-bold text-white truncate">
+                          {w.name}
+                        </h2>
+                        <p className="text-xs text-[#6B7280] font-mono mt-0.5">
+                          ID: {w._id}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => setSelectedWell(null)}
+                        className="ml-4 p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors flex-shrink-0"
                       >
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: style.bg }} />
-                        {w.status}
-                      </span>
+                        <svg
+                          className="w-5 h-5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M6 18L18 6M6 6l12 12"
+                          />
+                        </svg>
+                      </button>
                     </div>
 
-                    {/* Owner */}
-                    <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
-                      <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Owner</p>
-                      {owner ? (
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-sm">
-                            {owner.firstName?.charAt(0) || "?"}
+                    {/* Scrollable body */}
+                    <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                      {/* Status badge */}
+                      <div className="flex items-center gap-3">
+                        <span
+                          className="inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold"
+                          style={{
+                            backgroundColor: `${style.bg}20`,
+                            color: style.bg,
+                            border: `1px solid ${style.bg}40`,
+                          }}
+                        >
+                          <span
+                            className="w-2 h-2 rounded-full"
+                            style={{ backgroundColor: style.bg }}
+                          />
+                          {w.status}
+                        </span>
+                      </div>
+
+                      {/* Owner */}
+                      <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                        <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                          Owner
+                        </p>
+                        {owner ? (
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-sm">
+                              {owner.firstName?.charAt(0) || "?"}
+                            </div>
+                            <div>
+                              <p className="text-white font-medium">
+                                {owner.firstName} {owner.lastName}
+                              </p>
+                              <p className="text-xs text-[#6B7280]">
+                                {owner.email}
+                              </p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="text-white font-medium">{owner.firstName} {owner.lastName}</p>
-                            <p className="text-xs text-[#6B7280]">{owner.email}</p>
+                        ) : (
+                          <p className="text-[#6B7280] text-sm">
+                            Unknown owner
+                          </p>
+                        )}
+                      </div>
+
+                      {/* Details grid */}
+                      <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4 space-y-3">
+                        <p className="text-xs text-[#9BA0A6] uppercase tracking-wider">
+                          Well Information
+                        </p>
+                        {[
+                          {
+                            label: "Latitude",
+                            value:
+                              w.location?.lat != null
+                                ? `${w.location.lat.toFixed(6)}°`
+                                : "—",
+                          },
+                          {
+                            label: "Longitude",
+                            value:
+                              w.location?.lng != null
+                                ? `${w.location.lng.toFixed(6)}°`
+                                : "—",
+                          },
+                          {
+                            label: "Photos",
+                            value: `${w.photos?.length || 0} photo${
+                              (w.photos?.length || 0) !== 1 ? "s" : ""
+                            }`,
+                          },
+                          {
+                            label: "Last Inspected",
+                            value: w.lastInspected
+                              ? new Date(w.lastInspected).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  }
+                                )
+                              : "Never inspected",
+                          },
+                          {
+                            label: "Created",
+                            value: new Date(w.createdAt).toLocaleDateString(
+                              "en-US",
+                              { year: "numeric", month: "long", day: "numeric" }
+                            ),
+                          },
+                          {
+                            label: "Last Updated",
+                            value: new Date(w.updatedAt).toLocaleDateString(
+                              "en-US",
+                              { year: "numeric", month: "long", day: "numeric" }
+                            ),
+                          },
+                        ].map(({ label, value }) => (
+                          <div
+                            key={label}
+                            className="flex items-start justify-between gap-4 py-2 border-b border-[#172431] last:border-0"
+                          >
+                            <span className="text-sm text-[#9BA0A6] flex-shrink-0">
+                              {label}
+                            </span>
+                            <span className="text-sm text-white text-right font-mono">
+                              {value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Photos gallery */}
+                      {w.photos?.length > 0 && (
+                        <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                          <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                            Photos ({w.photos.length})
+                          </p>
+                          <div className="grid grid-cols-3 gap-2">
+                            {w.photos.map((photo, i) => (
+                              <a
+                                key={i}
+                                href={photoUrl(photo)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="relative group overflow-hidden rounded-lg border border-[#172431] hover:border-[#F5BD27] transition-all duration-300"
+                              >
+                                <img
+                                  src={photoUrl(photo)}
+                                  alt={`Well ${i + 1}`}
+                                  className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-300"
+                                />
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                  <svg
+                                    className="w-5 h-5 text-white"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                                    />
+                                  </svg>
+                                </div>
+                              </a>
+                            ))}
                           </div>
                         </div>
-                      ) : (
-                        <p className="text-[#6B7280] text-sm">Unknown owner</p>
                       )}
                     </div>
-
-                    {/* Details grid */}
-                    <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4 space-y-3">
-                      <p className="text-xs text-[#9BA0A6] uppercase tracking-wider">Well Information</p>
-                      {[
-                        {
-                          label: "Latitude",
-                          value: w.location?.lat != null ? `${w.location.lat.toFixed(6)}°` : "—",
-                        },
-                        {
-                          label: "Longitude",
-                          value: w.location?.lng != null ? `${w.location.lng.toFixed(6)}°` : "—",
-                        },
-                        {
-                          label: "Photos",
-                          value: `${w.photos?.length || 0} photo${(w.photos?.length || 0) !== 1 ? "s" : ""}`,
-                        },
-                        {
-                          label: "Last Inspected",
-                          value: w.lastInspected
-                            ? new Date(w.lastInspected).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
-                            : "Never inspected",
-                        },
-                        {
-                          label: "Created",
-                          value: new Date(w.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
-                        },
-                        {
-                          label: "Last Updated",
-                          value: new Date(w.updatedAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
-                        },
-                      ].map(({ label, value }) => (
-                        <div key={label} className="flex items-start justify-between gap-4 py-2 border-b border-[#172431] last:border-0">
-                          <span className="text-sm text-[#9BA0A6] flex-shrink-0">{label}</span>
-                          <span className="text-sm text-white text-right font-mono">{value}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Photos gallery */}
-                    {w.photos?.length > 0 && (
-                      <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
-                        <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Photos ({w.photos.length})</p>
-                        <div className="grid grid-cols-3 gap-2">
-                          {w.photos.map((photo, i) => (
-                            <a
-                              key={i}
-                              href={photoUrl(photo)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="relative group overflow-hidden rounded-lg border border-[#172431] hover:border-[#F5BD27] transition-all duration-300"
-                            >
-                              <img
-                                src={photoUrl(photo)}
-                                alt={`Well ${i + 1}`}
-                                className="w-full h-20 object-cover group-hover:scale-110 transition-transform duration-300"
-                              />
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                              </div>
-                            </a>
-                          ))}
-                        </div>
-                      </div>
-                    )}
                   </div>
-                </div>
-                <style>{`
+                  <style>{`
                   @keyframes slideInRight {
                     from { transform: translateX(100%); opacity: 0; }
                     to   { transform: translateX(0);    opacity: 1; }
                   }
                 `}</style>
-              </>
-            );
-          })()}
+                </>
+              );
+            })()}
 
+          {/* REPORTS SECTION */}
           {/* REPORTS SECTION */}
           {activeNav === "reports" && (
             <div className="space-y-6">
               {/* Header */}
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-white">Reports</h2>
-                  <p className="text-sm text-[#9BA0A6] mt-0.5">Manage and view all submitted reports</p>
+                  <h2 className="text-xl font-bold text-white">
+                    Reports Management
+                  </h2>
+                  <p className="text-sm text-[#9BA0A6] mt-0.5">
+                    Monitor and manage water well condition reports
+                  </p>
                 </div>
                 <button
-                  onClick={() => {/* TODO: open add report modal */}}
+                  onClick={() => navigate("/create")}
                   className="inline-flex items-center gap-2 bg-[#F5BD27] hover:bg-[#E6C27A] text-[#0A0E19] font-semibold px-5 py-2.5 rounded-lg transition-all duration-300 transform hover:scale-105 shadow-lg"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
                   </svg>
-                  Add Report
+                  Create Report
                 </button>
               </div>
 
-              {/* Placeholder content */}
-              <div className="bg-[#101624] rounded-xl border border-[#172431] p-16 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-[#F5BD27]/10 border border-[#F5BD27]/20 flex items-center justify-center">
-                  <svg className="w-8 h-8 text-[#F5BD27]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5}
-                      d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
+              {/* Stats Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-[#F5BD27]/10">
+                      <svg
+                        className="w-5 h-5 text-[#F5BD27]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Total Reports</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.length}
+                  </p>
                 </div>
-                <p className="text-white font-semibold mb-1">No reports yet</p>
-                <p className="text-[#9BA0A6] text-sm">Reports functionality coming soon. Use the Add Report button to get started.</p>
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-amber-500/10">
+                      <svg
+                        className="w-5 h-5 text-amber-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Pending</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.filter((r) => r.status === "pending").length}
+                  </p>
+                </div>
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                      <svg
+                        className="w-5 h-5 text-emerald-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Verified</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.filter((r) => r.status === "verified").length}
+                  </p>
+                </div>
+                <div className="bg-[#101624] rounded-xl border border-[#172431] p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="p-2 rounded-lg bg-red-500/10">
+                      <svg
+                        className="w-5 h-5 text-red-400"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-[#9BA0A6] text-sm">Rejected</p>
+                  <p className="text-white text-2xl font-bold">
+                    {reports.filter((r) => r.status === "rejected").length}
+                  </p>
+                </div>
               </div>
+
+              {/* Filters */}
+              <div className="bg-[#101624] rounded-xl border border-[#172431] p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="flex items-center gap-2 text-[#9BA0A6]">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+                      />
+                    </svg>
+                    <span className="text-sm font-medium">Filters:</span>
+                  </div>
+
+                  <select
+                    value={filterStatus}
+                    onChange={(e) => setFilterStatus(e.target.value)}
+                    className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white text-sm focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="verified">Verified</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+
+                  <select
+                    value={filterCondition}
+                    onChange={(e) => setFilterCondition(e.target.value)}
+                    className="px-4 py-2 bg-[#0A0E19] border border-[#172431] rounded-lg text-white text-sm focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer"
+                  >
+                    <option value="">All Conditions</option>
+                    <option value="DRY">Dry</option>
+                    <option value="CONTAMINATED">Contaminated</option>
+                    <option value="DAMAGED">Damaged</option>
+                    <option value="LOW_WATER">Low Water</option>
+                  </select>
+
+                  {(filterStatus || filterCondition) && (
+                    <button
+                      onClick={() => {
+                        setFilterStatus("");
+                        setFilterCondition("");
+                      }}
+                      className="px-4 py-2 text-sm text-[#9BA0A6] hover:text-white border border-[#172431] hover:border-[#F5BD27]/50 rounded-lg transition-all"
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+
+                  <span className="ml-auto text-xs text-[#6B7280]">
+                    {reportsLoading
+                      ? "Loading..."
+                      : `${reports.length} report${
+                          reports.length !== 1 ? "s" : ""
+                        }`}
+                  </span>
+                </div>
+              </div>
+
+              {/* Reports Table */}
+              <div className="bg-[#101624] rounded-xl border border-[#172431] overflow-hidden">
+                {reportsLoading ? (
+                  <div className="flex items-center justify-center py-16">
+                    <div className="text-center">
+                      <div className="w-12 h-12 border-4 border-[#F5BD27] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+                      <p className="text-[#9BA0A6]">Loading reports...</p>
+                    </div>
+                  </div>
+                ) : reports.length === 0 ? (
+                  <div className="text-center py-16">
+                    <svg
+                      className="w-16 h-16 mx-auto text-[#6B7280] mb-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={1.5}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <p className="text-white font-semibold mb-1">
+                      No reports found
+                    </p>
+                    <p className="text-[#9BA0A6] text-sm">
+                      {filterStatus || filterCondition
+                        ? "Try adjusting your filters"
+                        : "Click 'Create Report' to get started"}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#0A0E19] border-b border-[#172431]">
+                        <tr>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Well
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Condition
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Severity
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Reported By
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Date
+                          </th>
+                          <th className="px-5 py-4 text-left text-xs font-medium text-[#9BA0A6] uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#172431]">
+                        {reports.map((report) => {
+                          const getConditionStyles = () => {
+                            switch (report.conditionType) {
+                              case "DRY":
+                                return {
+                                  bg: "bg-amber-500/10",
+                                  text: "text-amber-400",
+                                  border: "border-amber-500/30",
+                                  label: "Dry",
+                                };
+                              case "CONTAMINATED":
+                                return {
+                                  bg: "bg-red-500/10",
+                                  text: "text-red-400",
+                                  border: "border-red-500/30",
+                                  label: "Contaminated",
+                                };
+                              case "DAMAGED":
+                                return {
+                                  bg: "bg-orange-500/10",
+                                  text: "text-orange-400",
+                                  border: "border-orange-500/30",
+                                  label: "Damaged",
+                                };
+                              case "LOW_WATER":
+                                return {
+                                  bg: "bg-blue-500/10",
+                                  text: "text-blue-400",
+                                  border: "border-blue-500/30",
+                                  label: "Low Water",
+                                };
+                              default:
+                                return {
+                                  bg: "bg-gray-500/10",
+                                  text: "text-gray-400",
+                                  border: "border-gray-500/30",
+                                  label: report.conditionType,
+                                };
+                            }
+                          };
+
+                          const getStatusStyles = () => {
+                            switch (report.status) {
+                              case "pending":
+                                return {
+                                  bg: "bg-amber-500/10",
+                                  text: "text-amber-400",
+                                  dot: "bg-amber-400",
+                                  label: "Pending",
+                                };
+                              case "verified":
+                                return {
+                                  bg: "bg-emerald-500/10",
+                                  text: "text-emerald-400",
+                                  dot: "bg-emerald-400",
+                                  label: "Verified",
+                                };
+                              case "rejected":
+                                return {
+                                  bg: "bg-red-500/10",
+                                  text: "text-red-400",
+                                  dot: "bg-red-400",
+                                  label: "Rejected",
+                                };
+                              default:
+                                return {
+                                  bg: "bg-gray-500/10",
+                                  text: "text-gray-400",
+                                  dot: "bg-gray-400",
+                                  label: report.status,
+                                };
+                            }
+                          };
+
+                          const condStyle = getConditionStyles();
+                          const statusStyle = getStatusStyles();
+                          const severityScore =
+                            report.severityScore ||
+                            Math.floor(Math.random() * 10) + 1;
+                          const severityPct = (severityScore / 10) * 100;
+                          const severityColor =
+                            severityScore >= 9
+                              ? "bg-red-500"
+                              : severityScore >= 7
+                              ? "bg-orange-500"
+                              : severityScore >= 4
+                              ? "bg-yellow-500"
+                              : "bg-emerald-500";
+
+                          return (
+                            <tr
+                              key={report._id}
+                              className="hover:bg-[#0A0E19] transition-colors cursor-pointer"
+                              onClick={() => setSelectedReport(report)}
+                            >
+                              <td className="px-5 py-4">
+                                <p className="font-medium text-white">
+                                  {report.wellId?.name || "Unknown Well"}
+                                </p>
+                                {report.wellId?.location && (
+                                  <p className="text-xs text-[#6B7280] mt-0.5 font-mono">
+                                    {report.wellId.location.lat?.toFixed(4)}°,{" "}
+                                    {report.wellId.location.lng?.toFixed(4)}°
+                                  </p>
+                                )}
+                              </td>
+                              <td className="px-5 py-4">
+                                <span
+                                  className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium border ${condStyle.bg} ${condStyle.text} ${condStyle.border}`}
+                                >
+                                  {condStyle.label}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <div className="flex items-center gap-2 min-w-[80px]">
+                                  <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                    <div
+                                      className={`h-full rounded-full ${severityColor}`}
+                                      style={{ width: `${severityPct}%` }}
+                                    />
+                                  </div>
+                                  <span className="text-xs font-semibold text-gray-300 tabular-nums">
+                                    {severityScore}
+                                  </span>
+                                </div>
+                              </td>
+                              <td className="px-5 py-4">
+                                <p className="text-gray-300">
+                                  {report.reportedBy?.firstName}{" "}
+                                  {report.reportedBy?.lastName}
+                                </p>
+                                <p className="text-xs text-[#6B7280]">
+                                  {report.reportedBy?.email}
+                                </p>
+                              </td>
+                              <td className="px-5 py-4">
+                                <span
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${statusStyle.bg} ${statusStyle.text}`}
+                                >
+                                  <span
+                                    className={`w-1.5 h-1.5 rounded-full ${statusStyle.dot}`}
+                                  />
+                                  {statusStyle.label}
+                                </span>
+                              </td>
+                              <td className="px-5 py-4">
+                                <p className="text-gray-400 whitespace-nowrap">
+                                  {new Date(
+                                    report.createdAt
+                                  ).toLocaleDateString()}
+                                </p>
+                              </td>
+                              <td className="px-5 py-4">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/report/${report._id}`);
+                                  }}
+                                  className="text-[#F5BD27] hover:text-[#E6C27A] text-sm font-medium transition-colors"
+                                >
+                                  View Details
+                                </button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Report Detail Modal */}
+              {selectedReport &&
+                (() => {
+                  const report = selectedReport;
+                  const condStyle = (() => {
+                    switch (report.conditionType) {
+                      case "DRY":
+                        return { bg: "#F5BD27", label: "Dry" };
+                      case "CONTAMINATED":
+                        return { bg: "#CA6162", label: "Contaminated" };
+                      case "DAMAGED":
+                        return { bg: "#F5BD27", label: "Damaged" };
+                      case "LOW_WATER":
+                        return { bg: "#4BDA7F", label: "Low Water" };
+                      default:
+                        return { bg: "#6B7280", label: report.conditionType };
+                    }
+                  })();
+                  const statusStyle = (() => {
+                    switch (report.status) {
+                      case "pending":
+                        return { bg: "#F5BD27", label: "Pending" };
+                      case "verified":
+                        return { bg: "#4BDA7F", label: "Verified" };
+                      case "rejected":
+                        return { bg: "#CA6162", label: "Rejected" };
+                      default:
+                        return { bg: "#6B7280", label: report.status };
+                    }
+                  })();
+
+                  return (
+                    <>
+                      <div
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        onClick={() => setSelectedReport(null)}
+                      />
+                      <div className="fixed top-0 right-0 h-full w-full max-w-md bg-[#101624] border-l border-[#172431] z-50 flex flex-col shadow-2xl overflow-hidden">
+                        <div className="flex items-start justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-1">
+                              Report Details
+                            </p>
+                            <h2 className="text-xl font-bold text-white truncate">
+                              {report.wellId?.name || "Unknown Well"}
+                            </h2>
+                            <p className="text-xs text-[#6B7280] font-mono mt-0.5">
+                              ID: {report._id}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setSelectedReport(null)}
+                            className="ml-4 p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                          <div className="flex items-center gap-3">
+                            <span
+                              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold`}
+                              style={{
+                                backgroundColor: `${condStyle.bg}20`,
+                                color: condStyle.bg,
+                                border: `1px solid ${condStyle.bg}40`,
+                              }}
+                            >
+                              <span
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: condStyle.bg }}
+                              />
+                              {condStyle.label}
+                            </span>
+                            <span
+                              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold`}
+                              style={{
+                                backgroundColor: `${statusStyle.bg}20`,
+                                color: statusStyle.bg,
+                                border: `1px solid ${statusStyle.bg}40`,
+                              }}
+                            >
+                              {statusStyle.label}
+                            </span>
+                          </div>
+
+                          <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                            <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                              Description
+                            </p>
+                            <p className="text-white text-sm leading-relaxed">
+                              {report.description || "No description provided"}
+                            </p>
+                          </div>
+
+                          <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                            <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                              Reported By
+                            </p>
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-sm">
+                                {report.reportedBy?.firstName?.charAt(0) || "?"}
+                              </div>
+                              <div>
+                                <p className="text-white font-medium">
+                                  {report.reportedBy?.firstName}{" "}
+                                  {report.reportedBy?.lastName}
+                                </p>
+                                <p className="text-xs text-[#6B7280]">
+                                  {report.reportedBy?.email}
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4 space-y-3">
+                            <p className="text-xs text-[#9BA0A6] uppercase tracking-wider">
+                              Well Information
+                            </p>
+                            {[
+                              {
+                                label: "Well Name",
+                                value: report.wellId?.name || "—",
+                              },
+                              {
+                                label: "Location",
+                                value: report.wellId?.location
+                                  ? `${report.wellId.location.lat?.toFixed(
+                                      6
+                                    )}°, ${report.wellId.location.lng?.toFixed(
+                                      6
+                                    )}°`
+                                  : "—",
+                              },
+                              {
+                                label: "Reported Date",
+                                value: new Date(
+                                  report.createdAt
+                                ).toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                }),
+                              },
+                            ].map(({ label, value }) => (
+                              <div
+                                key={label}
+                                className="flex items-start justify-between gap-4 py-2 border-b border-[#172431] last:border-0"
+                              >
+                                <span className="text-sm text-[#9BA0A6]">
+                                  {label}
+                                </span>
+                                <span className="text-sm text-white text-right">
+                                  {value}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {report.imageURL && (
+                            <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                              <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                                Evidence Image
+                              </p>
+                              <img
+                                src={report.imageURL}
+                                alt="Evidence"
+                                className="w-full rounded-lg border border-[#172431]"
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
             </div>
           )}
 
@@ -1588,15 +2438,26 @@ const AdminDashboard = () => {
               {/* Warning icon */}
               <div className="flex items-center justify-center mb-4">
                 <div className="w-14 h-14 rounded-full bg-[#CA6162]/10 border border-[#CA6162]/20 flex items-center justify-center">
-                  <svg className="w-7 h-7 text-[#CA6162]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
-                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                  <svg
+                    className="w-7 h-7 text-[#CA6162]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+                    />
                   </svg>
                 </div>
               </div>
 
               {/* Text */}
-              <h3 className="text-lg font-bold text-white text-center mb-1">Delete User</h3>
+              <h3 className="text-lg font-bold text-white text-center mb-1">
+                Delete User
+              </h3>
               <p className="text-[#9BA0A6] text-sm text-center mb-1">
                 Are you sure you want to delete
               </p>
@@ -1604,7 +2465,8 @@ const AdminDashboard = () => {
                 {deleteConfirm.firstName} {deleteConfirm.lastName}
               </p>
               <p className="text-xs text-[#6B7280] text-center mb-6">
-                This action cannot be undone. All data associated with this account will be permanently removed.
+                This action cannot be undone. All data associated with this
+                account will be permanently removed.
               </p>
 
               {/* Buttons */}
@@ -1634,135 +2496,225 @@ const AdminDashboard = () => {
       )}
 
       {/* User Detail Slide-Over Panel */}
-      {viewUserPanel && (() => {
-        const u = viewUserPanel;
-        const ROLE_COLORS = {
-          Admin: { bg: "#F5BD27", label: "Admin" },
-          User: { bg: "#178B96", label: "User" },
-          Villager: { bg: "#4BDA7F", label: "Villager" },
-          Reporter: { bg: "#A38F7A", label: "Reporter" },
-        };
-        const roleStyle = ROLE_COLORS[u.role] || ROLE_COLORS.User;
-        return (
-          <>
-            {/* Backdrop */}
-            {/* Panel */}
-            <div
-              className="fixed top-0 right-0 h-full w-full max-w-md bg-[#101624] border-l border-[#172431] z-50 flex flex-col shadow-2xl overflow-hidden"
-              style={{ animation: "slideInRight 0.25s ease-out" }}
-            >
-              {/* Header */}
-              <div className="flex items-start justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-1">User Details</p>
-                  <h2 className="text-xl font-bold text-white truncate">
-                    {u.firstName} {u.lastName}
-                  </h2>
-                  <p className="text-xs text-[#6B7280] font-mono mt-0.5">ID: {u._id}</p>
-                </div>
-                <button
-                  onClick={() => setViewUserPanel(null)}
-                  className="ml-4 p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors flex-shrink-0"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              {/* Scrollable body */}
-              <div className="flex-1 overflow-y-auto p-6 space-y-5">
-
-                {/* Avatar + role */}
-                <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-2xl flex-shrink-0">
-                    {u.firstName?.charAt(0) || "?"}
+      {viewUserPanel &&
+        (() => {
+          const u = viewUserPanel;
+          const ROLE_COLORS = {
+            Admin: { bg: "#F5BD27", label: "Admin" },
+            User: { bg: "#178B96", label: "User" },
+            Villager: { bg: "#4BDA7F", label: "Villager" },
+            Reporter: { bg: "#A38F7A", label: "Reporter" },
+          };
+          const roleStyle = ROLE_COLORS[u.role] || ROLE_COLORS.User;
+          return (
+            <>
+              {/* Backdrop */}
+              {/* Panel */}
+              <div
+                className="fixed top-0 right-0 h-full w-full max-w-md bg-[#101624] border-l border-[#172431] z-50 flex flex-col shadow-2xl overflow-hidden"
+                style={{ animation: "slideInRight 0.25s ease-out" }}
+              >
+                {/* Header */}
+                <div className="flex items-start justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-1">
+                      User Details
+                    </p>
+                    <h2 className="text-xl font-bold text-white truncate">
+                      {u.firstName} {u.lastName}
+                    </h2>
+                    <p className="text-xs text-[#6B7280] font-mono mt-0.5">
+                      ID: {u._id}
+                    </p>
                   </div>
-                  <div>
-                    <p className="text-white font-semibold text-lg">{u.firstName} {u.lastName}</p>
-                    <span
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mt-1"
-                      style={{ backgroundColor: `${roleStyle.bg}20`, color: roleStyle.bg, border: `1px solid ${roleStyle.bg}40` }}
+                  <button
+                    onClick={() => setViewUserPanel(null)}
+                    className="ml-4 p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors flex-shrink-0"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
                     >
-                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: roleStyle.bg }} />
-                      {u.role}
-                    </span>
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Scrollable body */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-5">
+                  {/* Avatar + role */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#F5BD27] to-[#E6C27A] flex items-center justify-center text-[#0A0E19] font-bold text-2xl flex-shrink-0">
+                      {u.firstName?.charAt(0) || "?"}
+                    </div>
+                    <div>
+                      <p className="text-white font-semibold text-lg">
+                        {u.firstName} {u.lastName}
+                      </p>
+                      <span
+                        className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold mt-1"
+                        style={{
+                          backgroundColor: `${roleStyle.bg}20`,
+                          color: roleStyle.bg,
+                          border: `1px solid ${roleStyle.bg}40`,
+                        }}
+                      >
+                        <span
+                          className="w-1.5 h-1.5 rounded-full"
+                          style={{ backgroundColor: roleStyle.bg }}
+                        />
+                        {u.role}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Contact info */}
+                  <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4 space-y-0">
+                    <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                      Contact Information
+                    </p>
+                    {[
+                      { label: "Email", value: u.email || "—" },
+                      { label: "Mobile", value: u.mobile || "—" },
+                    ].map(({ label, value }) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0"
+                      >
+                        <span className="text-sm text-[#9BA0A6]">{label}</span>
+                        <span className="text-sm text-white font-mono break-all text-right">
+                          {value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Personal details */}
+                  <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                    <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                      Personal Details
+                    </p>
+                    {[
+                      { label: "NIC", value: u.nic || "—" },
+                      { label: "Gender", value: u.gender || "—" },
+                      {
+                        label: "Date of Birth",
+                        value: u.dob
+                          ? new Date(u.dob).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : "—",
+                      },
+                      { label: "Address", value: u.address || "—" },
+                    ].map(({ label, value }) => (
+                      <div
+                        key={label}
+                        className="flex items-start justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0"
+                      >
+                        <span className="text-sm text-[#9BA0A6] flex-shrink-0">
+                          {label}
+                        </span>
+                        <span className="text-sm text-white text-right">
+                          {value}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Account info */}
+                  <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
+                    <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">
+                      Account
+                    </p>
+                    {[
+                      { label: "User ID", value: u.userId || u._id?.slice(-8) },
+                      {
+                        label: "Verified",
+                        value: u.isVerified ? "✓ Verified" : "✗ Not verified",
+                      },
+                      {
+                        label: "Joined",
+                        value: u.createdAt
+                          ? new Date(u.createdAt).toLocaleDateString("en-US", {
+                              year: "numeric",
+                              month: "long",
+                              day: "numeric",
+                            })
+                          : "—",
+                      },
+                    ].map(({ label, value }) => (
+                      <div
+                        key={label}
+                        className="flex items-center justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0"
+                      >
+                        <span className="text-sm text-[#9BA0A6]">{label}</span>
+                        <span
+                          className={`text-sm font-mono ${
+                            label === "Verified"
+                              ? u.isVerified
+                                ? "text-[#4BDA7F]"
+                                : "text-[#CA6162]"
+                              : "text-white"
+                          }`}
+                        >
+                          {value}
+                        </span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-
-                {/* Contact info */}
-                <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4 space-y-0">
-                  <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Contact Information</p>
-                  {[
-                    { label: "Email", value: u.email || "—" },
-                    { label: "Mobile", value: u.mobile || "—" },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex items-center justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0">
-                      <span className="text-sm text-[#9BA0A6]">{label}</span>
-                      <span className="text-sm text-white font-mono break-all text-right">{value}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Personal details */}
-                <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
-                  <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Personal Details</p>
-                  {[
-                    { label: "NIC", value: u.nic || "—" },
-                    { label: "Gender", value: u.gender || "—" },
-                    { label: "Date of Birth", value: u.dob ? new Date(u.dob).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—" },
-                    { label: "Address", value: u.address || "—" },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex items-start justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0">
-                      <span className="text-sm text-[#9BA0A6] flex-shrink-0">{label}</span>
-                      <span className="text-sm text-white text-right">{value}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Account info */}
-                <div className="bg-[#0A0E19] rounded-xl border border-[#172431] p-4">
-                  <p className="text-xs text-[#9BA0A6] uppercase tracking-wider mb-3">Account</p>
-                  {[
-                    { label: "User ID", value: u.userId || u._id?.slice(-8) },
-                    { label: "Verified", value: u.isVerified ? "✓ Verified" : "✗ Not verified" },
-                    { label: "Joined", value: u.createdAt ? new Date(u.createdAt).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—" },
-                  ].map(({ label, value }) => (
-                    <div key={label} className="flex items-center justify-between gap-4 py-2.5 border-b border-[#172431] last:border-0">
-                      <span className="text-sm text-[#9BA0A6]">{label}</span>
-                      <span className={`text-sm font-mono ${label === "Verified"
-                        ? u.isVerified ? "text-[#4BDA7F]" : "text-[#CA6162]"
-                        : "text-white"
-                        }`}>{value}</span>
-                    </div>
-                  ))}
-                </div>
               </div>
-            </div>
-            <style>{`
+              <style>{`
               @keyframes slideInRight {
                 from { transform: translateX(100%); opacity: 0; }
                 to   { transform: translateX(0);    opacity: 1; }
               }
             `}</style>
-          </>
-        );
-      })()}
+            </>
+          );
+        })()}
 
       {/* Add User Modal */}
       {showAddUserModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
-          <div className="w-full max-w-2xl" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="w-full max-w-2xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="bg-[#101624] rounded-2xl border border-[#172431] shadow-2xl overflow-hidden">
               {/* Modal Header */}
               <div className="flex items-center justify-between p-6 border-b border-[#172431] bg-[#0A0E19]">
                 <div>
-                  <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-0.5">Admin</p>
+                  <p className="text-xs text-[#9BA0A6] uppercase tracking-widest mb-0.5">
+                    Admin
+                  </p>
                   <h2 className="text-xl font-bold text-white">Add New User</h2>
                 </div>
-                <button onClick={() => setShowAddUserModal(false)} className="p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <button
+                  onClick={() => setShowAddUserModal(false)}
+                  className="p-2 rounded-lg text-[#9BA0A6] hover:text-white hover:bg-[#172431] transition-colors"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
                   </svg>
                 </button>
               </div>
@@ -1775,20 +2727,58 @@ const AdminDashboard = () => {
                 )}
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: "First Name", name: "firstName", type: "text", placeholder: "John" },
-                    { label: "Last Name", name: "lastName", type: "text", placeholder: "Doe" },
-                    { label: "Email", name: "email", type: "email", placeholder: "user@example.com" },
-                    { label: "Password", name: "password", type: "password", placeholder: "Min. 6 characters" },
-                    { label: "NIC", name: "nic", type: "text", placeholder: "e.g. 990001234V" },
-                    { label: "Mobile", name: "mobile", type: "text", placeholder: "e.g. +94771234567" },
+                    {
+                      label: "First Name",
+                      name: "firstName",
+                      type: "text",
+                      placeholder: "John",
+                    },
+                    {
+                      label: "Last Name",
+                      name: "lastName",
+                      type: "text",
+                      placeholder: "Doe",
+                    },
+                    {
+                      label: "Email",
+                      name: "email",
+                      type: "email",
+                      placeholder: "user@example.com",
+                    },
+                    {
+                      label: "Password",
+                      name: "password",
+                      type: "password",
+                      placeholder: "Min. 6 characters",
+                    },
+                    {
+                      label: "NIC",
+                      name: "nic",
+                      type: "text",
+                      placeholder: "e.g. 990001234V",
+                    },
+                    {
+                      label: "Mobile",
+                      name: "mobile",
+                      type: "text",
+                      placeholder: "e.g. +94771234567",
+                    },
                   ].map(({ label, name, type, placeholder }) => (
                     <div key={name}>
-                      <label className="block text-xs font-medium text-[#9BA0A6] mb-1">{label} *</label>
+                      <label className="block text-xs font-medium text-[#9BA0A6] mb-1">
+                        {label} *
+                      </label>
                       <input
-                        type={type} required
+                        type={type}
+                        required
                         minLength={name === "password" ? 6 : undefined}
                         value={addUserForm[name]}
-                        onChange={(e) => setAddUserForm(f => ({ ...f, [name]: e.target.value }))}
+                        onChange={(e) =>
+                          setAddUserForm((f) => ({
+                            ...f,
+                            [name]: e.target.value,
+                          }))
+                        }
                         placeholder={placeholder}
                         className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] focus:ring-1 focus:ring-[#F5BD27] transition-all"
                       />
@@ -1797,52 +2787,98 @@ const AdminDashboard = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-medium text-[#9BA0A6] mb-1">Gender *</label>
-                    <select required value={addUserForm.gender} onChange={(e) => setAddUserForm(f => ({ ...f, gender: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer">
+                    <label className="block text-xs font-medium text-[#9BA0A6] mb-1">
+                      Gender *
+                    </label>
+                    <select
+                      required
+                      value={addUserForm.gender}
+                      onChange={(e) =>
+                        setAddUserForm((f) => ({
+                          ...f,
+                          gender: e.target.value,
+                        }))
+                      }
+                      className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white focus:outline-none focus:border-[#F5BD27] transition-all cursor-pointer"
+                    >
                       <option value="Male">Male</option>
                       <option value="Female">Female</option>
                       <option value="Other">Other</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-[#9BA0A6] mb-1">Date of Birth *</label>
-                    <input type="date" required value={addUserForm.dob}
-                      onChange={(e) => setAddUserForm(f => ({ ...f, dob: e.target.value }))}
-                      className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white focus:outline-none focus:border-[#F5BD27] transition-all" />
+                    <label className="block text-xs font-medium text-[#9BA0A6] mb-1">
+                      Date of Birth *
+                    </label>
+                    <input
+                      type="date"
+                      required
+                      value={addUserForm.dob}
+                      onChange={(e) =>
+                        setAddUserForm((f) => ({ ...f, dob: e.target.value }))
+                      }
+                      className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white focus:outline-none focus:border-[#F5BD27] transition-all"
+                    />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#9BA0A6] mb-1">Address *</label>
-                  <textarea required rows={2} value={addUserForm.address}
-                    onChange={(e) => setAddUserForm(f => ({ ...f, address: e.target.value }))}
+                  <label className="block text-xs font-medium text-[#9BA0A6] mb-1">
+                    Address *
+                  </label>
+                  <textarea
+                    required
+                    rows={2}
+                    value={addUserForm.address}
+                    onChange={(e) =>
+                      setAddUserForm((f) => ({ ...f, address: e.target.value }))
+                    }
                     placeholder="Full address..."
-                    className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] transition-all resize-none" />
+                    className="w-full px-3 py-2.5 bg-[#0A0E19] border border-[#172431] rounded-lg text-white placeholder-[#6B7280] focus:outline-none focus:border-[#F5BD27] transition-all resize-none"
+                  />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-[#9BA0A6] mb-2">Role</label>
+                  <label className="block text-xs font-medium text-[#9BA0A6] mb-2">
+                    Role
+                  </label>
                   <div className="flex gap-2 flex-wrap">
                     {["User", "Admin", "Villager", "Reporter"].map((r) => (
-                      <button key={r} type="button" onClick={() => setAddUserForm(f => ({ ...f, role: r }))}
-                        className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${addUserForm.role === r
-                          ? "bg-[#F5BD27] border-[#F5BD27] text-[#0A0E19]"
-                          : "bg-[#0A0E19] border-[#172431] text-[#9BA0A6] hover:border-[#F5BD27]"
-                          }`}>{r}</button>
+                      <button
+                        key={r}
+                        type="button"
+                        onClick={() =>
+                          setAddUserForm((f) => ({ ...f, role: r }))
+                        }
+                        className={`px-4 py-2 rounded-lg border text-sm font-medium transition-all duration-200 ${
+                          addUserForm.role === r
+                            ? "bg-[#F5BD27] border-[#F5BD27] text-[#0A0E19]"
+                            : "bg-[#0A0E19] border-[#172431] text-[#9BA0A6] hover:border-[#F5BD27]"
+                        }`}
+                      >
+                        {r}
+                      </button>
                     ))}
                   </div>
                 </div>
                 <div className="flex gap-3 pt-2">
-                  <button type="submit" disabled={addUserLoading}
-                    className="flex-1 bg-gradient-to-r from-[#F5BD27] to-[#E6C27A] hover:from-[#E6C27A] hover:to-[#F5BD27] text-[#0A0E19] font-semibold px-6 py-2.5 rounded-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed">
+                  <button
+                    type="submit"
+                    disabled={addUserLoading}
+                    className="flex-1 bg-gradient-to-r from-[#F5BD27] to-[#E6C27A] hover:from-[#E6C27A] hover:to-[#F5BD27] text-[#0A0E19] font-semibold px-6 py-2.5 rounded-xl transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
                     {addUserLoading ? (
                       <span className="flex items-center justify-center gap-2">
                         <span className="w-4 h-4 border-2 border-[#0A0E19] border-t-transparent rounded-full animate-spin" />
                         Creating...
                       </span>
-                    ) : "Create User"}
+                    ) : (
+                      "Create User"
+                    )}
                   </button>
-                  <button type="button" onClick={() => setShowAddUserModal(false)}
-                    className="px-6 py-2.5 bg-[#172431] hover:bg-[#1a2a3a] text-white font-medium rounded-xl transition-all">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddUserModal(false)}
+                    className="px-6 py-2.5 bg-[#172431] hover:bg-[#1a2a3a] text-white font-medium rounded-xl transition-all"
+                  >
                     Cancel
                   </button>
                 </div>
@@ -1855,7 +2891,10 @@ const AdminDashboard = () => {
       {/* Add Well Modal */}
       {showAddWellModal && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-start justify-center overflow-y-auto py-8 px-4">
-          <div className="w-full max-w-3xl" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="w-full max-w-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
             <AddWell
               onSuccess={() => {
                 setShowAddWellModal(false);

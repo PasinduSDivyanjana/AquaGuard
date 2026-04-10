@@ -17,6 +17,7 @@ import alertRoutes from "./routes/alertRoutes.js";
 import environmentRoutes from "./routes/environmentRoutes.js";
 import predictiveRoutes from "./routes/predictiveRoutes.js";
 import userRoute from "./routes/userRoute.js";
+import mapRoute from "./routes/mapRoute.js";
 import cors from "cors";
 
 const PORT = process.env.PORT || 5001;
@@ -50,6 +51,7 @@ app.use("/api/environment", environmentRoutes);
 app.use("/api/predictive", predictiveRoutes);
 app.use("/api/user", userRoute);
 app.use("/api/wells", wellRoute);
+app.use("/api/map", mapRoute);
 
 // Error handling — must be last
 app.use(notFound);
