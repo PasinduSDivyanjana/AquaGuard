@@ -1,0 +1,294 @@
+openapi: 3.0.0
+info:
+  title: AquaGuard Well Management API
+  description: API documentation for managing water wells, including CRUD operations and weather reporting.
+  version: 1.0.0
+servers:
+  - url: /api
+    description: Base URL for APIs
+
+components:
+  schemas:
+    Well:
+      type: object
+      required:
+        - name
+        - location
+      properties:
+        _id:
+          type: string
+          description: Unique identifier for the well.
+        name:
+          type: string
+          example: "Central Community Well"
+        location:
+          type: object
+          required:
+            - lat
+            - lng
+          properties:
+            lat:
+              type: number
+              format: float
+              example: 6.9271
+            lng:
+              type: number
+              format: float
+              example: 79.8612
+        status:
+          type: string
+          enum: [Good, Needs Repair, Contaminated, Dry]
+          default: Good
+        lastInspected:
+          type: string
+          format: date-time
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+          maxItems: 5
+          description: URLs of the well photos.
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error message details"
+
+paths:
+  /wells:
+    post:
+      summary: Create a new well
+      tags:
+        - Wells
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - name
+                - lat
+                - lng
+              properties:
+                name:
+                  type: string
+                lat:
+                  type: number
+                  format: float
+                lng:
+                  type: number
+                  format: float
+                status:
+                  type: string
+                  enum: [Good, Needs Repair, Contaminated, Dry]
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  maxItems: 5
+      responses:
+        "201":
+          description: Well created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Well'
+        "401":
+          description: Unauthorized
+        "500":
+          description: Internal server error
+
+    get:
+      summary: Get all wells
+      tags:
+        - Wells
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [Good, Needs Repair, Contaminated, Dry]
+        - name: search
+          in: query
+          description: Search by well name (case-insensitive)
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: List of wells retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      wells:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Well'
+                      total:
+                        type: integer
+                      page:
+                        type: integer
+                      limit:
+                        type: integer
+                      totalPages:
+                        type: integer
+        "401":
+          description: Unauthorized
+
+  /wells/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+          format: mongoId
+        description: The well ID
+    get:
+      summary: Get well by ID
+      tags:
+        - Wells
+      responses:
+        "200":
+          description: Well details retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Well'
+        "404":
+          description: Well not found
+        "401":
+          description: Unauthorized
+
+    put:
+      summary: Update well details
+      tags:
+        - Wells
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                location:
+                  type: object
+                  properties:
+                    lat:
+                      type: number
+                    lng:
+                      type: number
+                status:
+                  type: string
+                  enum: [Good, Needs Repair, Contaminated, Dry]
+                lastInspected:
+                  type: string
+                  format: date-time
+      responses:
+        "200":
+          description: Well updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Well'
+        "404":
+          description: Well not found
+        "401":
+          description: Unauthorized
+
+    delete:
+      summary: Delete a well
+      tags:
+        - Wells
+      description: Only admins can delete wells. A well cannot be deleted if it has reports.
+      responses:
+        "200":
+          description: Well deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+        "400":
+          description: Cannot delete well with reports
+        "403":
+          description: Forbidden (Admin only)
+        "404":
+          description: Well not found
+
+  /wells/{id}/weather:
+    get:
+      summary: Get weather data for a well
+      tags:
+        - Wells
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: mongoId
+      responses:
+        "200":
+          description: Weather data retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+        "404":
+          description: Well not found
